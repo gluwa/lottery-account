@@ -21,11 +21,11 @@ library GluwaAccountModel {
     struct Deposit {
         // Index of this Deposit
         uint256 idx;
+        uint256 accountIdx;
         // address of the Account owner
         address owner;
         uint256 creationDate;
         uint256 amount;
-        bytes32 referenceHash;
     }
 
     struct SavingAccount {

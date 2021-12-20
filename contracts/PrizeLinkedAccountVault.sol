@@ -49,6 +49,17 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
         return true;
     }
 
+    function depositPrizedLinkAccount(address owner, uint256 amount)
+        external
+        returns (bool)
+    {
+        bytes32 depositHash = _deposit(owner, amount);
+        _totalTicketPerDeposit[depositHash] = amount
+            .div(uint256(10)**uint256(_tokenDecimal))
+            .div(_tokenPerTicket);
+        return true;
+    }
+
     function createPrizedLinkTickets(bytes32 referenceHash)
         external
         returns (bool)
@@ -61,16 +72,6 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
             deposit.creationDate,
             referenceHash
         );
-        return true;
-    }
-
-    function deposit(
-        address owner,
-        uint256 amount,
-        bytes calldata securityHash
-    ) external returns (bool) {
-        // _createSavingAccount(owner, amount, now, securityHash);
-        // _createTicketForDeposit(owner, amount);
         return true;
     }
 
@@ -140,5 +141,5 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
         )
     {
         return _getTicket(idx);
-    }   
+    }
 }

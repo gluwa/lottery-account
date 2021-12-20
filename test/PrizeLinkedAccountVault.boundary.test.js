@@ -33,7 +33,7 @@ var gluwaCoinAddress;
 var prizeLinkedAccountVaultAddress;
 var decimalsVal = BigInt(10) ** BigInt(decimals);
 var mintAmount = BigInt(2000000) * decimalsVal;
-var depositAmount = BigInt(200) * decimalsVal;
+var depositAmount = BigInt(2000) * decimalsVal;
 var tokenPerTicket = 1;
 var ticketValidityTargetBlock = 20;
 var prizeLinkedAccountVault;
@@ -191,49 +191,5 @@ describe('Gluwacoin', function () {
 
   });
 
-  it('measure the total deposit into contract', async function () {
-    await gluwaCoin.connect(user1).approve(prizeLinkedAccountVaultAddress, depositAmount * BigInt(10));
-    await gluwaCoin.connect(user2).approve(prizeLinkedAccountVaultAddress, depositAmount * BigInt(10));
-    
-    await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, depositAmount * BigInt(4), user1.address);
-    await prizeLinkedAccountVault.createPrizedLinkAccount(user2.address, depositAmount * BigInt(3), user2.address);
-
-
-    expect((await prizeLinkedAccountVault.getCurrentTotalDeposit())).to.equal(depositAmount * BigInt(7));
-  });
-
-  it('multiple deposits into one account', async function () {
-    await gluwaCoin.connect(user1).approve(prizeLinkedAccountVaultAddress, depositAmount * BigInt(10));
-    
-    await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, depositAmount * BigInt(4), user1.address);
-    await prizeLinkedAccountVault.depositPrizedLinkAccount(user1.address, depositAmount * BigInt(3));
-    await prizeLinkedAccountVault.depositPrizedLinkAccount(user1.address, depositAmount * BigInt(2));
-
-
-    expect((await prizeLinkedAccountVault.getCurrentTotalDeposit())).to.equal(depositAmount * BigInt(9));
-  });
-
-  it('each address must have only one saving account', async function () {
-    await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, depositAmount / BigInt(2), user1.address);
-    try {
-      await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, depositAmount / BigInt(2), user1.address);
-      throw "error";
-    }
-    catch (error) {
-      expect(String(error)).to.contain("GluwaSavingAccount: Each address should have only 1 Saving account only");
-    }
-
-  });
-
-  it('identity hash is reused', async function () {
-    await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, depositAmount / BigInt(2), user1.address);
-    try {
-      await prizeLinkedAccountVault.createPrizedLinkAccount(user2.address, depositAmount / BigInt(2), user1.address);
-      throw "error";
-    }
-    catch (error) {
-      expect(String(error)).to.contain("GluwaSavingAccount: Identity hash is already used");
-    }
-
-  });
+  
 });

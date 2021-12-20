@@ -157,14 +157,15 @@ contract GluwacoinSavingAccount is Initializable, Context {
         });
 
         _depositStorage[depositHash] = GluwaAccountModel.Deposit({
-            idx: _savingAccountIndex.nextIdx,
+            idx: _depositIndex.nextIdx,
             owner: owner_,
             creationDate: startDate,
             amount: initialDeposit,
-            referenceHash: accountHash_
+            accountIdx: _savingAccountIndex.nextIdx
         });
         _usedIdentityHash[identityHash] = true;
         _savingAccountIndex.add(accountHash_);
+        _depositIndex.add(depositHash);
 
         _currentTotalContractDeposit += initialDeposit;
         emit CreateAccount(accountHash_, owner_);
@@ -187,7 +188,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         return true;
     }
 
-    function _deposit(address owner, uint256 amount) internal returns (bool) {
+    function _deposit(address owner, uint256 amount) internal returns (bytes32) {
         GluwaAccountModel.SavingAccount
             storage account = _addressSavingAccountMapping[owner];
 
@@ -202,9 +203,23 @@ contract GluwacoinSavingAccount is Initializable, Context {
         );
         account.totalDeposit += amount;
         _currentTotalContractDeposit += amount;
+        bytes32 depositHash = GluwaAccountModel.generateDepositHash(
+            account.idx,
+            amount,
+            address(this),
+            owner
+        );
+        _depositStorage[depositHash] = GluwaAccountModel.Deposit({
+            idx: _depositIndex.nextIdx,
+            owner: owner,
+            creationDate: now,
+            amount: amount,
+            accountIdx: account.idx
+        });
+        _depositIndex.add(depositHash);
 
-        emit WithdrawSavingAccount(owner, amount);
-        return true;
+        emit CreateDeposit(depositHash, owner, amount);
+        return depositHash;
     }
 
     /**
@@ -212,6 +227,11 @@ contract GluwacoinSavingAccount is Initializable, Context {
      */
     function getCurrentTotalDeposit() public view returns (uint256) {
         return _currentTotalContractDeposit;
+    }
+
+    function getDeposit(bytes32 depositHash) public view returns(uint256, uint256, address, uint256, uint256)
+    {
+
     }
 
     function getSavingAcount()

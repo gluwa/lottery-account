@@ -151,12 +151,15 @@ contract GluwaPrizeDraw is Initializable, Context {
         address owner_,
         uint256 depositTimeStamp,
         bytes32 referenceHash
-    ) internal returns (uint256[] memory) {        
-        uint256 totalTickets = _totalTicketPerDeposit[referenceHash] -  _ticketsDepositMapping[referenceHash].length;
-        require(totalTickets > 0, "GluwaPrizeDraw: no more tickets can be created for this deposit");
+    ) internal returns (uint256[] memory) {
+        uint256 totalTickets = _totalTicketPerDeposit[referenceHash] -
+            _ticketsDepositMapping[referenceHash].length;
+        require(
+            totalTickets > 0,
+            "GluwaPrizeDraw: no more tickets can be created for this deposit"
+        );
         uint32 maxProcssed = _totalTicketPerBatch;
-        if (totalTickets < _totalTicketPerBatch)
-        {
+        if (totalTickets < _totalTicketPerBatch) {
             maxProcssed = uint32(totalTickets);
         }
         DateTimeModel.DateTime memory drawDateTime = DateTimeModel.toDateTime(
@@ -195,8 +198,8 @@ contract GluwaPrizeDraw is Initializable, Context {
             drawDateTime.minute,
             drawDateTime.second
         );
+        uint256 targetBlock = block.number + _ticketValidityTargetBlock;
         for (uint32 i = 0; i < maxProcssed; i++) {
-            uint256 targetBlock = block.number + _ticketValidityTargetBlock;
             _tickets[_drawTicketIndex.nextIdx] = DrawTicketModel.DrawTicket({
                 idx: _drawTicketIndex.nextIdx,
                 owner: owner_,
