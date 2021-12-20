@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "Initializable",
+  "sourceName": "contracts/mocks/SandboxGluwacoin.sol",
+  "abi": [],
+  "bytecode": "0x6080604052348015600f57600080fd5b50603580601d6000396000f3fe6080604052600080fdfea165627a7a7230582006dfbdbbe817ac7a24a41f68c054d631b5050d717c37c4c61a805c4a035b36dc0029",
+  "deployedBytecode": "0x6080604052600080fdfea165627a7a7230582006dfbdbbe817ac7a24a41f68c054d631b5050d717c37c4c61a805c4a035b36dc0029",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

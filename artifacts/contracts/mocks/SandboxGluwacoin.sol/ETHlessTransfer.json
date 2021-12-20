@@ -1,0 +1,10 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "ETHlessTransfer",
+  "sourceName": "contracts/mocks/SandboxGluwacoin.sol",
+  "abi": [],
+  "bytecode": "0x6080604052348015600f57600080fd5b50603580601d6000396000f3fe6080604052600080fdfea165627a7a723058200a2690c03fd848ef50c2d2cab5beb3ada2dbcfda6d8e0e16aeb34d2e84717e310029",
+  "deployedBytecode": "0x6080604052600080fdfea165627a7a723058200a2690c03fd848ef50c2d2cab5beb3ada2dbcfda6d8e0e16aeb34d2e84717e310029",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

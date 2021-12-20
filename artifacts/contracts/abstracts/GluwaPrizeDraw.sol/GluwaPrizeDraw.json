@@ -1,0 +1,33 @@
+{
+  "_format": "hh-sol-artifact-1",
+  "contractName": "GluwaPrizeDraw",
+  "sourceName": "contracts/abstracts/GluwaPrizeDraw.sol",
+  "abi": [
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "winner",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "ticket",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "name": "reward",
+          "type": "uint256"
+        }
+      ],
+      "name": "Winner",
+      "type": "event"
+    }
+  ],
+  "bytecode": "0x608060405260358060116000396000f3fe6080604052600080fdfea165627a7a72305820b40565a57e3e105df530ff47bd55fa3fbfd2723cbae4cd1f6776e1efe04fa0430029",
+  "deployedBytecode": "0x6080604052600080fdfea165627a7a72305820b40565a57e3e105df530ff47bd55fa3fbfd2723cbae4cd1f6776e1efe04fa0430029",
+  "linkReferences": {},
+  "deployedLinkReferences": {}
+}

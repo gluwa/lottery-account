@@ -1,0 +1,895 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/osboxes/prize-linked-account/contracts/abstracts/GluwacoinSavingAccount.sol": {
+      "lastModificationDate": 1639846714690,
+      "contentHash": "c2fc959819d3036747988085fe6629a9",
+      "sourceName": "contracts/abstracts/GluwacoinSavingAccount.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/math/SafeMath.sol",
+        "@openzeppelin/contracts/GSN/Context.sol",
+        "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol",
+        "./IERC20.sol",
+        "../libs/GluwaAccountModel.sol",
+        "../libs/HashMapIndex.sol",
+        "../libs/UintArrayUtil.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "GluwacoinSavingAccount"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/node_modules/@openzeppelin/contracts/math/SafeMath.sol": {
+      "lastModificationDate": 1638224103942,
+      "contentHash": "d208da96b6f6c1d204ee8248087cf2d7",
+      "sourceName": "@openzeppelin/contracts/math/SafeMath.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "SafeMath"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/node_modules/@openzeppelin/contracts/GSN/Context.sol": {
+      "lastModificationDate": 1638224103098,
+      "contentHash": "32a66f6f4d0584b403f26f8e5e4d17b5",
+      "sourceName": "@openzeppelin/contracts/GSN/Context.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "Context"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/node_modules/@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol": {
+      "lastModificationDate": 1638224098594,
+      "contentHash": "402d88f041ed1754339d60ae70077cd9",
+      "sourceName": "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        ">=0.4.24 <0.7.0"
+      ],
+      "artifacts": [
+        "Initializable"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/abstracts/IERC20.sol": {
+      "lastModificationDate": 1639507659566,
+      "contentHash": "48cf612d72d2aa1106de73d87f54b2c9",
+      "sourceName": "contracts/abstracts/IERC20.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "IERC20"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/libs/GluwaAccountModel.sol": {
+      "lastModificationDate": 1639804880884,
+      "contentHash": "b567f1d2c1b0445bef58ec4ef0341a0b",
+      "sourceName": "contracts/libs/GluwaAccountModel.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "GluwaAccountModel"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/libs/HashMapIndex.sol": {
+      "lastModificationDate": 1639818407734,
+      "contentHash": "ec04b2d8245dfb8746712282ac00cb09",
+      "sourceName": "contracts/libs/HashMapIndex.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "HashMapIndex"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/libs/UintArrayUtil.sol": {
+      "lastModificationDate": 1639161023587,
+      "contentHash": "4bb2dae6af8446b52df7de3a0648a9c3",
+      "sourceName": "contracts/libs/UintArrayUtil.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "UintArrayUtil"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/PrizeLinkedAccountVault.sol": {
+      "lastModificationDate": 1639938407363,
+      "contentHash": "c8b3eb67d9211404493af3455663f2e7",
+      "sourceName": "contracts/PrizeLinkedAccountVault.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./abstracts/GluwacoinSavingAccount.sol",
+        "./abstracts/GluwaPrizeDraw.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "PrizeLinkedAccountVault"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/abstracts/GluwaPrizeDraw.sol": {
+      "lastModificationDate": 1639965782554,
+      "contentHash": "326ad90c732a8a6c9190a2b0266f20ed",
+      "sourceName": "contracts/abstracts/GluwaPrizeDraw.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/math/SafeMath.sol",
+        "@openzeppelin/contracts/GSN/Context.sol",
+        "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol",
+        "../libs/DrawTicketModel.sol",
+        "../libs/HashMapIndex.sol",
+        "../libs/UintArrayUtil.sol",
+        "../libs/DateTimeModel.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "GluwaPrizeDraw"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/libs/DrawTicketModel.sol": {
+      "lastModificationDate": 1639805175680,
+      "contentHash": "aa0864de04b58fc93b2186e526628e1a",
+      "sourceName": "contracts/libs/DrawTicketModel.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "DrawTicketModel"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/libs/DateTimeModel.sol": {
+      "lastModificationDate": 1639098577767,
+      "contentHash": "5b71cbf500f998c147ab58d478c186df",
+      "sourceName": "contracts/libs/DateTimeModel.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "DateTimeModel"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/mocks/ExtendedERC20.sol": {
+      "lastModificationDate": 1638232864625,
+      "contentHash": "b7fce1ce2aa8c3cef8594029e50f9b72",
+      "sourceName": "contracts/mocks/ExtendedERC20.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol",
+        "@openzeppelin/contracts/math/SafeMath.sol",
+        "@openzeppelin/contracts/GSN/Context.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol"
+      ],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "ExtendedERC20"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol": {
+      "lastModificationDate": 1638224103602,
+      "contentHash": "183ff1f5e5f04bcfa85cee597bcb0236",
+      "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "IERC20"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/libs/AccessControl.sol": {
+      "lastModificationDate": 1638232864621,
+      "contentHash": "8ae246f42675d4ff19f5efb2b9c09b75",
+      "sourceName": "contracts/libs/AccessControl.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/GSN/Context.sol",
+        "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol",
+        "./EnumerableSet.sol",
+        "./Address.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "AccessControlUpgradeSafe"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/libs/EnumerableSet.sol": {
+      "lastModificationDate": 1638232864621,
+      "contentHash": "193fb8abf8a09c805209e1d533b0290f",
+      "sourceName": "contracts/libs/EnumerableSet.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "EnumerableSet"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/libs/Address.sol": {
+      "lastModificationDate": 1638232864621,
+      "contentHash": "d280cae2e1197aec9297d348c661e229",
+      "sourceName": "contracts/libs/Address.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "Address"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/libs/Validate.sol": {
+      "lastModificationDate": 1638232864621,
+      "contentHash": "cfa96fb174e822fbedbb244112b32084",
+      "sourceName": "contracts/libs/Validate.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/cryptography/ECDSA.sol",
+        "./Address.sol"
+      ],
+      "versionPragmas": [
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "Validate"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/node_modules/@openzeppelin/contracts/cryptography/ECDSA.sol": {
+      "lastModificationDate": 1638224103138,
+      "contentHash": "eb9f2a0bde674643d72cfa71dcbc4eb9",
+      "sourceName": "@openzeppelin/contracts/cryptography/ECDSA.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "ECDSA"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/abstracts/VaultControl.sol": {
+      "lastModificationDate": 1638232864621,
+      "contentHash": "ec4daf3bd50d3a7caa6aefcd639de057",
+      "sourceName": "contracts/abstracts/VaultControl.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/GSN/Context.sol",
+        "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol",
+        "../libs/AccessControl.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "VaultControl"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/mocks/SandboxPrizeLinkedAccountVault.sol": {
+      "lastModificationDate": 1639519495696,
+      "contentHash": "10bdcd66bf6ccf77e83c26ebeb919e65",
+      "sourceName": "contracts/mocks/SandboxPrizeLinkedAccountVault.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../PrizeLinkedAccountVault.sol"
+      ],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "SandboxPrizeLinkedAccountVault"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/abstracts/IDepositableAccount.sol": {
+      "lastModificationDate": 1638406839567,
+      "contentHash": "1fd1fb0c8fd04694806ff4063122f931",
+      "sourceName": "contracts/abstracts/IDepositableAccount.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "IDepositableAccount"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/mocks/SandboxGluwacoin.sol": {
+      "lastModificationDate": 1638232864625,
+      "contentHash": "12654eccd0f5c29ce87bfc2246f87271",
+      "sourceName": "contracts/mocks/SandboxGluwacoin.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0",
+        "^0.5.0",
+        "^0.5.0",
+        ">=0.5.0",
+        ">=0.5.0",
+        "^0.5.0",
+        "^0.5.0",
+        ">=0.4.24 <0.7.0",
+        ">=0.5.0",
+        ">=0.5.0",
+        "^0.5.0",
+        "^0.5.0",
+        ">=0.5.0"
+      ],
+      "artifacts": [
+        "AccessControlUpgradeSafe",
+        "Address",
+        "Context",
+        "ECDSA",
+        "ERC20Pausable",
+        "ETHlessTransfer",
+        "EnumerableSet",
+        "ExtendedERC20",
+        "IERC20",
+        "Initializable",
+        "SafeMath",
+        "SandboxGluwacoin",
+        "Validate"
+      ]
+    }
+  }
+}
