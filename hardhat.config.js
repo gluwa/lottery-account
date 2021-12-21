@@ -19,7 +19,8 @@ task("accounts", "Prints the list of accounts", async () => {
 module.exports = { 
   networks:{
     hardhat: {
-      gas: 30_000_000
+      gas: 32_000_000,
+      blockGasLimit: 32_000_000
     }
   },
   solidity: {

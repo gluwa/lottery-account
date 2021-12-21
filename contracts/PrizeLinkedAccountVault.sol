@@ -78,26 +78,24 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
     function prizeDraw(uint256 drawDateTime)
         external
         returns (
-            uint256,
-            address,
-            uint256,
-            uint256,
-            uint256,
-            DrawTicketModel.DrawTicketState state
+            uint64 ticketId,
+            address owner,
+            uint48 creationDate,
+            uint48 drawnDate,
+            uint96 targetBlockNumber
         )
     {
         DrawTicketModel.DrawTicket storage winner = _findWinner(drawDateTime);
-        return (
-            winner.idx,
-            winner.owner,
-            winner.creationDate,
-            winner.drawnDate,
-            winner.targetBlockNumber,
-            winner.state
-        );
+        owner = winner.owner;
+        (
+            ticketId,
+            creationDate,
+            drawnDate,
+            targetBlockNumber
+        ) = _getTicketDetails(winner.details);
     }
 
-    function getCurrentWinner() external returns (uint256) {
+    function getCurrentWinner() external view returns (uint256) {
         return _currentWinner;
     }
 
@@ -132,12 +130,11 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
         external
         view
         returns (
-            uint256,
+            uint64,
             address,
-            uint256,
-            uint256,
-            uint256,
-            DrawTicketModel.DrawTicketState
+            uint48,
+            uint48,
+            uint96
         )
     {
         return _getTicket(idx);

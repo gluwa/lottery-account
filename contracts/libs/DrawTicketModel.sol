@@ -1,14 +1,13 @@
 pragma solidity ^0.5.0;
 
 /** @title Library functions used by contracts within this ecosystem.*/
-library DrawTicketModel {      
-
+library DrawTicketModel {
     /**
      * @dev Enum of the different states a a draw ticket can be in.
-    */
+     */
     enum DrawTicketState {
         /*0*/
-        Invalid, 
+        Invalid,
         /*1*/
         Active,
         /*2*/
@@ -16,19 +15,17 @@ library DrawTicketModel {
         /*3*/
         Won,
         /*4*/
-        Disqualified        
-    }   
+        Disqualified
+    }
 
     struct DrawTicket {
-        // Index of this ticket
-        uint256 idx;
+        // Memory layout for ticket details:
+        // - 6 bytes for creationDate;
+        // - 6 bytes for drawnDate;
+        // - 12 bytes for targetBlockNumber;
+        // - 8 bytes for idx;
+        uint256 details;
         // address of the ticket's owner
-        address owner;             
-        uint256 creationDate;
-        uint256 drawnDate;
-        uint256 targetBlockNumber;
-        // Different states a Ticket can be in
-        DrawTicketState state;  
-        bytes32 securityReferenceHash;    
-    }       
+        address owner;
+    }
 }

@@ -4,7 +4,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol";
 import "../libs/DrawTicketModel.sol";
-import "../libs/HashMapIndex.sol";
+import "../libs/SimpleIndex.sol";
 import "../libs/UintArrayUtil.sol";
 import "../libs/DateTimeModel.sol";
 
@@ -12,10 +12,10 @@ contract GluwaPrizeDraw is Initializable, Context {
     using SafeMath for uint256;
 
     using UintArrayUtil for uint256[];
-    using HashMapIndex for HashMapIndex.HashMapping;
+    using SimpleIndex for SimpleIndex.Index;
 
     //IDepositableAccount private _depositContract;
-    HashMapIndex.HashMapping private _drawTicketIndex;
+    SimpleIndex.Index private _drawTicketIndex;
 
     uint8 internal _tokenDecimal;
     uint16 internal _tokenPerTicket;
@@ -45,11 +45,7 @@ contract GluwaPrizeDraw is Initializable, Context {
         _tokenPerTicket = tokenPerTicket;
         _ticketValidityTargetBlock = ticketValidityTargetBlock;
         _totalTicketPerBatch = totalTicketPerBatch;
-        _drawTicketIndex = HashMapIndex.HashMapping({
-            firstIdx: 1,
-            nextIdx: 1,
-            count: 0
-        });
+        _drawTicketIndex = SimpleIndex.Index({nextIdx: 1});
     }
 
     function _randomNumber(uint256 min, uint256 max)
@@ -77,21 +73,33 @@ contract GluwaPrizeDraw is Initializable, Context {
         returns (DrawTicketModel.DrawTicket storage)
     {
         uint256[] storage tickets = _drawTicketMapping[drawTimeStamp];
-        DrawTicketModel.DrawTicket storage first = _tickets[0];
+        DrawTicketModel.DrawTicket storage first = _tickets[tickets[0]];
+        (
+            uint64 ticketId,
+            ,
+            ,
+            uint96 targetBlockNumber
+        ) = _getTicketDetails(first.details);
         uint256 firstTicketNo = _generateTicketNumber(
-            first.targetBlockNumber,
-            first.idx,
+            ticketId,
+            targetBlockNumber,
             first.owner
         );
         uint256 max = firstTicketNo;
         uint256 min = firstTicketNo;
-        _ticketInUpcomingDraw[_nextDraw][firstTicketNo] = first.idx;
+        _ticketInUpcomingDraw[_nextDraw][firstTicketNo] = ticketId;
         _nextDraw = drawTimeStamp;
         for (uint256 i = 1; i < tickets.length; i++) {
             DrawTicketModel.DrawTicket storage one = _tickets[tickets[i]];
+            (
+                uint64 t_ticketId,
+                ,
+                ,
+                uint96 t_targetBlockNumber
+            ) = _getTicketDetails(one.details);
             uint256 ticketNo = _generateTicketNumber(
-                one.targetBlockNumber,
-                one.idx,
+                t_ticketId,
+                t_targetBlockNumber,
                 one.owner
             );
             if (ticketNo > max) {
@@ -99,7 +107,7 @@ contract GluwaPrizeDraw is Initializable, Context {
             } else if (ticketNo < min) {
                 min = ticketNo;
             }
-            _ticketInUpcomingDraw[_nextDraw][ticketNo] = one.idx;
+            _ticketInUpcomingDraw[_nextDraw][ticketNo] = t_ticketId;
         }
         uint256 winner = _randomNumber(min, max);
         _currentWinner = winner;
@@ -107,8 +115,8 @@ contract GluwaPrizeDraw is Initializable, Context {
     }
 
     function _generateTicketNumber(
-        uint256 blockNumber,
-        uint256 ticketId,
+        uint64 ticketId,
+        uint96 blockNumber,
         address owner
     ) internal view returns (uint256) {
         return
@@ -198,54 +206,67 @@ contract GluwaPrizeDraw is Initializable, Context {
             drawDateTime.minute,
             drawDateTime.second
         );
-        uint256 targetBlock = block.number + _ticketValidityTargetBlock;
-        for (uint32 i = 0; i < maxProcssed; i++) {
-            _tickets[_drawTicketIndex.nextIdx] = DrawTicketModel.DrawTicket({
-                idx: _drawTicketIndex.nextIdx,
-                owner: owner_,
-                creationDate: depositTimeStamp,
-                drawnDate: drawTimeStamp,
-                targetBlockNumber: targetBlock,
-                state: DrawTicketModel.DrawTicketState.Active,
-                securityReferenceHash: referenceHash
+        uint256 details_ = uint256(block.number + _ticketValidityTargetBlock);
+        details_ |= depositTimeStamp << 96;
+        details_ |= drawTimeStamp << 144;
+        for (
+            uint64 i = _drawTicketIndex.nextIdx;
+            i < _drawTicketIndex.nextIdx + maxProcssed;
+            i++
+        ) {
+            details_ |= i << 192;
+            _tickets[i] = DrawTicketModel.DrawTicket({
+                details: details_,
+                owner: owner_
             });
-            _addressValidTicketMapping[owner_].add(_drawTicketIndex.nextIdx);
-            _drawTicketMapping[drawTimeStamp].add(_drawTicketIndex.nextIdx);
-            _ticketsDepositMapping[referenceHash].add(_drawTicketIndex.nextIdx);
-            _drawTicketIndex.add(
-                keccak256(
-                    abi.encodePacked(
-                        owner_,
-                        depositTimeStamp,
-                        drawTimeStamp,
-                        targetBlock
-                    )
-                )
-            );
+            _addressValidTicketMapping[owner_].add(i);
+            _drawTicketMapping[drawTimeStamp].add(i);
+            _ticketsDepositMapping[referenceHash].add(i);
         }
+        _drawTicketIndex.set(_drawTicketIndex.nextIdx + maxProcssed);
     }
 
     function _getTicket(uint256 idx)
         internal
         view
         returns (
-            uint256,
+            uint64,
             address,
-            uint256,
-            uint256,
-            uint256,
-            DrawTicketModel.DrawTicketState
+            uint48,
+            uint48,
+            uint96
         )
     {
         DrawTicketModel.DrawTicket storage ticket = _tickets[idx];
+        (
+            uint64 ticketId,
+            uint48 creationDate,
+            uint48 drawnDate,
+            uint96 targetBlockNumber
+        ) = _getTicketDetails(ticket.details);
         return (
-            ticket.idx,
+            ticketId,
             ticket.owner,
-            ticket.creationDate,
-            ticket.drawnDate,
-            ticket.targetBlockNumber,
-            ticket.state
+            creationDate,
+            drawnDate,
+            targetBlockNumber
         );
+    }
+
+    function _getTicketDetails(uint256 details)
+        internal
+        pure
+        returns (
+            uint64 ticketId,
+            uint48 creationDate,
+            uint48 drawnDate,
+            uint96 targetBlockNumber
+        )
+    {
+        targetBlockNumber = uint96(details);
+        creationDate = uint48(details >> 96);
+        drawnDate = uint48(details >> 144);
+        ticketId = uint48(details >> 192);
     }
 
     function _getTicketState(uint256 ticketNumber)

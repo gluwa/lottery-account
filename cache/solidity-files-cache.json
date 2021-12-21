@@ -298,8 +298,8 @@
       ]
     },
     "/home/osboxes/prize-linked-account/contracts/PrizeLinkedAccountVault.sol": {
-      "lastModificationDate": 1640027000251,
-      "contentHash": "f0b2911d77000f8f2dfbd36a8582d3da",
+      "lastModificationDate": 1640074872499,
+      "contentHash": "ffa602f43ec7e8026f30f421f7f01461",
       "sourceName": "contracts/PrizeLinkedAccountVault.sol",
       "solcConfig": {
         "version": "0.5.0",
@@ -337,8 +337,8 @@
       ]
     },
     "/home/osboxes/prize-linked-account/contracts/abstracts/GluwaPrizeDraw.sol": {
-      "lastModificationDate": 1639965782554,
-      "contentHash": "326ad90c732a8a6c9190a2b0266f20ed",
+      "lastModificationDate": 1640075396064,
+      "contentHash": "07656e5955c2543d4215f7a3f220b742",
       "sourceName": "contracts/abstracts/GluwaPrizeDraw.sol",
       "solcConfig": {
         "version": "0.5.0",
@@ -369,7 +369,7 @@
         "@openzeppelin/contracts/GSN/Context.sol",
         "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol",
         "../libs/DrawTicketModel.sol",
-        "../libs/HashMapIndex.sol",
+        "../libs/SimpleIndex.sol",
         "../libs/UintArrayUtil.sol",
         "../libs/DateTimeModel.sol"
       ],
@@ -381,8 +381,8 @@
       ]
     },
     "/home/osboxes/prize-linked-account/contracts/libs/DrawTicketModel.sol": {
-      "lastModificationDate": 1639805175680,
-      "contentHash": "aa0864de04b58fc93b2186e526628e1a",
+      "lastModificationDate": 1640069156247,
+      "contentHash": "068347526a5c8dd7e64f2947f94d10de",
       "sourceName": "contracts/libs/DrawTicketModel.sol",
       "solcConfig": {
         "version": "0.5.0",
@@ -889,6 +889,42 @@
         "SafeMath",
         "SandboxGluwacoin",
         "Validate"
+      ]
+    },
+    "/home/osboxes/prize-linked-account/contracts/libs/SimpleIndex.sol": {
+      "lastModificationDate": 1640069359548,
+      "contentHash": "78d2f9b630ec55ffcf68e229749959d8",
+      "sourceName": "contracts/libs/SimpleIndex.sol",
+      "solcConfig": {
+        "version": "0.5.0",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "byzantium",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.5.0"
+      ],
+      "artifacts": [
+        "SimpleIndex"
       ]
     }
   }

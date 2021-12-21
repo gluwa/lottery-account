@@ -33,11 +33,12 @@ var gluwaCoinAddress;
 var prizeLinkedAccountVaultAddress;
 var decimalsVal = BigInt(10) ** BigInt(decimals);
 var mintAmount = BigInt(2000000) * decimalsVal;
-var depositAmount = BigInt(2000) * decimalsVal;
+var depositBaseAmount = BigInt(5000);
+var depositAmount = depositBaseAmount * decimalsVal;
 var tokenPerTicket = 1;
 var ticketValidityTargetBlock = 20;
 var prizeLinkedAccountVault;
-var totalTicketPerBatch = 110;
+var totalTicketPerBatch = 272;
 var gluwaCoin;
 var gluwaCoin2;
 var convertAmount = 50;
@@ -88,22 +89,9 @@ describe('Gluwacoin', function () {
   //   expect((await prizeLinkedAccountVault.isAdmin(ownerAddress))).to.equal(true);
   // });
 
-  it('check base token balance user1', async function () {
-    const balance = await gluwaCoin.balanceOf(user1.address);
+  
 
-    expect(await gluwaCoin.balanceOf(user1.address)).to.equal(mintAmount);
-  });
-
-  it('check allowance balance user1', async function () {
-    expect((await gluwaCoin.allowance(user1.address, prizeLinkedAccountVaultAddress))).to.equal(depositAmount);
-  });
-
-  it('check return of create prize-linked account', async function () {
-    const result = (await prizeLinkedAccountVault.callStatic.createPrizedLinkAccount(user1.address, depositAmount, user1.address));
-    expect(result).to.equal(true);
-  });
-
-  it('get prize-linked account info', async function () {
+  it('create prize-linked account with many tickets', async function () {
     var currentTime = Math.floor(Date.now()/1000);
     var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, depositAmount, user1.address);
     var receipt = await accountTxn.wait();
@@ -112,81 +100,9 @@ describe('Gluwacoin', function () {
       return one.event == "CreateDeposit";
     })[0].args[0];
 
-    var ticketTxn = await prizeLinkedAccountVault.createPrizedLinkTickets(depositHash);
-    var txnBlock = ticketTxn.blockNumber;
-
-    const { 0: savingAccount_idx,
-      1: savingAccount_hash,
-      2: savingAccount_owner,
-      3: savingAccount_interestRate,
-      4: savingAccount_interestRatePercentageBase,
-      5: savingAccount_creationDate,
-      6: savingAccount_totalDeposit,
-      7: savingAccount_yield,
-      8: savingAccount_state,
-      9: savingAccount_securityReferenceHash } = (await prizeLinkedAccountVault.getSavingAcountFor(user1.address));
-
-
-    expect(savingAccount_owner).to.equal(user1.address);
-    expect(savingAccount_state).to.equal(ACCOUNT_ACTIVE_STAGE);
-    expect(savingAccount_totalDeposit).to.equal(depositAmount);
-
-    var ticketList = (await prizeLinkedAccountVault.getValidTicketIdFor(user1.address));
-    var firstTicketId = ticketList[0];
-    const {
-      0: idx,
-      1: owner,
-      2: creationDate,
-      3: drawnDate,
-      4: targetBlockNumber,
-      5: state
-    } = await prizeLinkedAccountVault.getTicketById(firstTicketId);
-
-    expect(owner).to.equal(user1.address);
-    expect(state).to.equal(TICKET_ACTIVE_STAGE);
-    expect(targetBlockNumber).to.equal(txnBlock + ticketValidityTargetBlock);
-    expect(parseInt(creationDate)).to.greaterThan(currentTime);
-    expect(parseInt(drawnDate)).to.greaterThan(parseInt(creationDate));
-
-    for (var i = 1; i < ticketList.length; i++) {
-      const {
-        0: t_idx,
-        1: t_owner,
-        2: t_creationDate,
-        3: t_drawnDate,
-        4: t_targetBlockNumber,
-        5: t_state
-      } = await prizeLinkedAccountVault.getTicketById(ticketList[i]);
-  
-      expect(t_owner).to.equal(user1.address);
-      expect(t_state).to.equal(TICKET_ACTIVE_STAGE);
-      expect(t_targetBlockNumber).to.equal(targetBlockNumber);
-      expect(parseInt(t_creationDate)).to.equal(creationDate);
-      expect(parseInt(t_drawnDate)).to.equal(parseInt(drawnDate));
-    }
-
-    var k = ticketList.length;
-    ticketTxn = await prizeLinkedAccountVault.createPrizedLinkTickets(depositHash);
-    txnBlock = ticketTxn.blockNumber;
-    ticketList = (await prizeLinkedAccountVault.getValidTicketIdFor(user1.address));
-    for (var i = k; i < ticketList.length; i++) {
-      const {
-        0: t_idx,
-        1: t_owner,
-        2: t_creationDate,
-        3: t_drawnDate,
-        4: t_targetBlockNumber,
-        5: t_state
-      } = await prizeLinkedAccountVault.getTicketById(ticketList[i]);
-  
-      expect(t_owner).to.equal(user1.address);
-      expect(t_state).to.equal(TICKET_ACTIVE_STAGE);
-      expect(t_targetBlockNumber).to.equal(txnBlock + ticketValidityTargetBlock);
-      expect(parseInt(t_creationDate)).to.equal(creationDate);
-      expect(parseInt(t_drawnDate)).to.equal(parseInt(drawnDate));
-    }
-
-    expect(BigInt(ticketList.length)).to.equal(BigInt(depositAmount / decimalsVal));
+    var txn = await prizeLinkedAccountVault.createPrizedLinkTickets(depositHash);
+    var receiptPackedTransaction = await ethers.provider.getTransactionReceipt(txn.hash);
+    console.info(BigInt(receiptPackedTransaction.gasUsed._hex));  
 
 
   });
