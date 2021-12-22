@@ -27,14 +27,15 @@ const lowerLimitPercentage = 30;
 var ownerAddress;
 var owner;
 var user1;
-var user2;
-var user3;
 var gluwaCoinAddress;
 var prizeLinkedAccountVaultAddress;
 var decimalsVal = BigInt(10) ** BigInt(decimals);
 var mintAmount = BigInt(2000000) * decimalsVal;
-var depositBaseAmount = BigInt(5000);
+var depositBaseAmount = BigInt(7000);
 var depositAmount = depositBaseAmount * decimalsVal;
+var smallDepositBaseAmount = BigInt(100000);
+var smallDepositAmount = smallDepositBaseAmount * decimalsVal;
+var targetAccountCreated = 30;
 var tokenPerTicket = 1;
 var ticketValidityTargetBlock = 20;
 var prizeLinkedAccountVault;
@@ -61,7 +62,7 @@ describe('Gluwacoin', function () {
         DateTimeModel: DateTimeModel.address
       },
     });
-    [owner, user1, user2, user3, lender] = await ethers.getSigners();
+    [owner, user1] = await ethers.getSigners();
     ownerAddress = owner.address;
   });
 
@@ -76,36 +77,57 @@ describe('Gluwacoin', function () {
     prizeLinkedAccountVaultAddress = prizeLinkedAccountVault.address;
     prizeLinkedAccountVault.initialize(ownerAddress, gluwaCoinAddress, standardInterestRate,
       standardInterestRatePercentageBase, standardMaturityTerm, budget, tokenPerTicket, ticketValidityTargetBlock, totalTicketPerBatch);
-    gluwaCoin.mint(ownerAddress, mintAmount);
-    gluwaCoin.mint(user1.address, mintAmount);
-    gluwaCoin.mint(user2.address, mintAmount);
+    gluwaCoin.mint(ownerAddress, depositAmount);
+    gluwaCoin.mint(user1.address, depositAmount);
     await gluwaCoin.connect(user1).approve(prizeLinkedAccountVaultAddress, depositAmount);
-    await gluwaCoin.connect(user2).approve(prizeLinkedAccountVaultAddress, depositAmount);
   });
 
-  // it('check roles for owner', async function () {
-  //   expect((await prizeLinkedAccountVault.isOperator(ownerAddress))).to.equal(true);
-  //   expect((await prizeLinkedAccountVault.isController(ownerAddress))).to.equal(true);
-  //   expect((await prizeLinkedAccountVault.isAdmin(ownerAddress))).to.equal(true);
-  // });
 
-  
 
   it('create prize-linked account with many tickets', async function () {
-    var currentTime = Math.floor(Date.now()/1000);
+    var currentTime = Math.floor(Date.now() / 1000);
     var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, depositAmount, user1.address);
     var receipt = await accountTxn.wait();
 
     var depositHash = receipt.events.filter(function (one) {
       return one.event == "CreateDeposit";
     })[0].args[0];
+    var processed = 0;
+    while (processed < depositBaseAmount) {
+      await prizeLinkedAccountVault.createPrizedLinkTickets(depositHash);
+      processed += totalTicketPerBatch;
+    }
 
-    var txn = await prizeLinkedAccountVault.createPrizedLinkTickets(depositHash);
-    var receiptPackedTransaction = await ethers.provider.getTransactionReceipt(txn.hash);
-    console.info(BigInt(receiptPackedTransaction.gasUsed._hex));  
+    var ticketList = (await prizeLinkedAccountVault.getValidTicketIdFor(user1.address));
+    console.info(ticketList.length);
+
 
 
   });
 
-  
+  it('create prize-linked account with many tickets', async function () {
+
+
+    for (var i = 0; i < targetAccountCreated; i++) {
+      var temp = await ethers.Wallet.createRandom();
+      await gluwaCoin.mint(temp.address, depositAmount);
+      await gluwaCoin.connect(temp).approve(prizeLinkedAccountVaultAddress, depositAmount);
+      var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, smallDepositAmount, temp.address);
+      var receipt = await accountTxn.wait();
+      var depositHash = receipt.events.filter(function (one) {
+        return one.event == "CreateDeposit";
+      })[0].args[0];
+      var processed = 0;
+      while (processed < smallDepositBaseAmount) {
+        await prizeLinkedAccountVault.createPrizedLinkTickets(depositHash);
+        processed += totalTicketPerBatch;
+      }
+    }
+
+
+
+  });
+
+
+
 });

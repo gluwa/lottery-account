@@ -9,7 +9,7 @@ library SimpleIndex {
      * @dev Efficient storage container for hashes enabling iteration
      */
     struct Index {   
-        uint64 nextIdx;
+        uint56 nextIdx;
     }
 
     /**
@@ -24,7 +24,7 @@ library SimpleIndex {
      * @dev Add a index to the storage container if it is not yet part of it
      * @param self Struct storage container pointing to itself
      */
-    function set(Index storage self, uint64 next) internal {        
+    function set(Index storage self, uint56 next) internal {        
         self.nextIdx = next;
     }   
     

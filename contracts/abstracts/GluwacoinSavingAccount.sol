@@ -13,13 +13,6 @@ contract GluwacoinSavingAccount is Initializable, Context {
     using SafeMath for uint256;
     using UintArrayUtil for uint256[];
 
-    uint32 private _standardInterestRate;
-    /**
-     * @dev
-        if interest rate is 15%, the interestRatePercentageBase is 100 and interestRate is 15
-        if interest rate is 15.5%, the interestRatePercentageBase is 1000 and interestRate is 155
-     */
-    uint32 private _standardInterestRatePercentageBase;
     uint64 private _standardMaturityTerm;
     uint256 private _budget;
     uint256 private _minimumDeposit;
@@ -28,6 +21,13 @@ contract GluwacoinSavingAccount is Initializable, Context {
     HashMapIndex.HashMapping private _savingAccountIndex;
     HashMapIndex.HashMapping private _depositIndex;
 
+    uint32 internal _standardInterestRate;
+    /**
+     * @dev
+        if interest rate is 15%, the interestRatePercentageBase is 100 and interestRate is 15
+        if interest rate is 15.5%, the interestRatePercentageBase is 1000 and interestRate is 155
+     */
+    uint32 internal _standardInterestRatePercentageBase;
     /// @dev The total amount users deposit to this Saving contract minus the withdrawn principal
     uint256 internal _currentTotalContractDeposit;
 
@@ -188,7 +188,10 @@ contract GluwacoinSavingAccount is Initializable, Context {
         return true;
     }
 
-    function _deposit(address owner, uint256 amount) internal returns (bytes32) {
+    function _deposit(address owner, uint256 amount)
+        internal
+        returns (bytes32)
+    {
         GluwaAccountModel.SavingAccount
             storage account = _addressSavingAccountMapping[owner];
 
@@ -229,10 +232,17 @@ contract GluwacoinSavingAccount is Initializable, Context {
         return _currentTotalContractDeposit;
     }
 
-    function getDeposit(bytes32 depositHash) public view returns(uint256, uint256, address, uint256, uint256)
-    {
-
-    }
+    function getDeposit(bytes32 depositHash)
+        public
+        view
+        returns (
+            uint256,
+            uint256,
+            address,
+            uint256,
+            uint256
+        )
+    {}
 
     function getSavingAcount()
         external

@@ -23,7 +23,8 @@ library DrawTicketModel {
         // - 6 bytes for creationDate;
         // - 6 bytes for drawnDate;
         // - 12 bytes for targetBlockNumber;
-        // - 8 bytes for idx;
+        // - 1 byte for state
+        // - 7 bytes for idx;
         uint256 details;
         // address of the ticket's owner
         address owner;

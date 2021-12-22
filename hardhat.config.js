@@ -23,6 +23,9 @@ module.exports = {
       blockGasLimit: 32_000_000
     }
   },
+  mocha:{
+    timeout: 500000,
+  },
   solidity: {
     version: "0.5.0",
     settings: {
