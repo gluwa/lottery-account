@@ -1,5 +1,6 @@
 const { expect, use } = require('chai');
 const { solidity } = require('ethereum-waffle');
+const { Wallet, ethers } = require('ethers');
 
 use(solidity);
 
@@ -62,7 +63,7 @@ describe('Gluwacoin', function () {
         DateTimeModel: DateTimeModel.address
       },
     });
-    [owner, user1] = await ethers.getSigners();
+    [owner, user1, bank1, bank2] = await ethers.getSigners();
     ownerAddress = owner.address;
   });
 
@@ -109,9 +110,16 @@ describe('Gluwacoin', function () {
 
 
     for (var i = 0; i < targetAccountCreated; i++) {
+      console.info(i);
       var temp = await ethers.Wallet.createRandom();
       await gluwaCoin.mint(temp.address, depositAmount);
+      await bank1.sendTransaction({
+        to: temp.address,
+        value: ethers.utils.parseEther(100000)
+      });
       await gluwaCoin.connect(temp).approve(prizeLinkedAccountVaultAddress, depositAmount);
+      console.info(temp.address);
+
       var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, smallDepositAmount, temp.address);
       var receipt = await accountTxn.wait();
       var depositHash = receipt.events.filter(function (one) {

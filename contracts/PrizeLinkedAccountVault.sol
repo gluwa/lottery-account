@@ -1,9 +1,14 @@
 pragma solidity ^0.5.0;
 
+import "./abstracts/VaultControl.sol";
 import "./abstracts/GluwacoinSavingAccount.sol";
 import "./abstracts/GluwaPrizeDraw.sol";
 
-contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
+contract PrizeLinkedAccountVault is
+    VaultControl,
+    GluwacoinSavingAccount,
+    GluwaPrizeDraw
+{
     event Winner(address winner, uint256 ticket, uint256 reward);
 
     function initialize(
@@ -17,6 +22,7 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
         uint16 ticketValidityTargetBlock,
         uint32 totalTicketPerBatch
     ) external initializer {
+        __VaultControl_Init(admin);
         __GluwacoinSavingAccount_init_unchained(
             tokenAddress,
             standardInterestRate,
@@ -32,18 +38,17 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
         );
     }
 
-    function prizeDraw(uint256 drawTimeStamp)
-        external
-        returns (bool)
-    {
-        DrawTicketModel.DrawTicket storage winningTicket = _findWinner(drawTimeStamp);
-        uint256 prize = (_totalPrizeBroughForward.add(_currentTotalContractDeposit)).mul(_standardInterestRate).div(_standardInterestRatePercentageBase);
-        if (winningTicket.details > 0)
-        {        
-            _totalPrizeBroughForward = 0;    
+    function prizeDraw(uint256 drawTimeStamp) external onlyOperator returns (bool) {
+        DrawTicketModel.DrawTicket storage winningTicket = _findWinner(
+            drawTimeStamp
+        );
+        uint256 prize = (
+            _totalPrizeBroughForward.add(_currentTotalContractDeposit)
+        ).mul(_standardInterestRate).div(_standardInterestRatePercentageBase);
+        if (winningTicket.details > 0) {
+            _totalPrizeBroughForward = 0;
             return _depositPrizedLinkAccount(winningTicket.owner, prize);
-        }
-        else {
+        } else {
             _totalPrizeBroughForward += prize;
             return true;
         }
@@ -53,7 +58,7 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
         address owner,
         uint256 amount,
         bytes calldata securityHash
-    ) external returns (bool) {
+    ) external onlyOperator returns (bool) {
         (, bytes32 depositHash) = _createSavingAccount(
             owner,
             amount,
@@ -67,14 +72,13 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
     }
 
     function depositPrizedLinkAccount(address owner, uint256 amount)
-        external
+        external onlyOperator
         returns (bool)
     {
-        
         return _depositPrizedLinkAccount(owner, amount);
     }
 
-       function _depositPrizedLinkAccount(address owner, uint256 amount)
+    function _depositPrizedLinkAccount(address owner, uint256 amount)
         internal
         returns (bool)
     {
@@ -86,7 +90,7 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
     }
 
     function createPrizedLinkTickets(bytes32 referenceHash)
-        external
+        external onlyOperator
         returns (bool)
     {
         GluwaAccountModel.Deposit storage deposit = _depositStorage[
@@ -98,14 +102,14 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
             referenceHash
         );
         return true;
-    }      
+    }
 
     function getCurrentWinner() external view returns (uint256) {
         return _currentWinner;
     }
 
     function getSavingAcountFor(address owner)
-        external
+        external onlyOperator
         view
         returns (
             uint256,
@@ -124,7 +128,7 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
     }
 
     function getValidTicketIdFor(address owner)
-        external
+        external onlyOperator
         view
         returns (uint256[] memory)
     {
@@ -145,6 +149,4 @@ contract PrizeLinkedAccountVault is GluwacoinSavingAccount, GluwaPrizeDraw {
     {
         return _getTicket(idx);
     }
-
-    
 }

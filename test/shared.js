@@ -1,4 +1,4 @@
-async function getMinDeposit(gluwaBondVault) {
+async function generateTicketForDraw(gluwaCoin, prizeLinkedAccountVault) {
     const { 0: bondSettings_standardMaturityTerm,
         1: bondSettings_standardInterestRate,
         2: bondSettings_standardInterestRatePercentageBase,
@@ -47,4 +47,4 @@ async function getBondBalanceState(gluwaBondVault, bondBalanceHash) {
     return bondBalance_state;
 }
 
-module.exports = {getMinDeposit, getBondAccountState, getBondAccountIdx, getBondAccountHashByIdx, getBondBalanceState}
+module.exports = {generateTicketForDraw, getBondAccountState, getBondAccountIdx, getBondAccountHashByIdx, getBondBalanceState}
