@@ -136,10 +136,8 @@ describe('Gluwacoin', function () {
     const {
       0: idx,
       1: owner,
-      2: creationDate,
-      3: drawnDate,
-      4: targetBlockNumber,
-      5: state
+      2: upper,
+      3: lower     
     } = await prizeLinkedAccountVault.getTicketById(firstTicketId);
     console.info(await prizeLinkedAccountVault.test(user1.address));
     expect(owner).to.equal(user1.address);

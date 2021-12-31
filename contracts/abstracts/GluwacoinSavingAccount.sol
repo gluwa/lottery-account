@@ -17,6 +17,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
     uint256 private _budget;
     uint256 private _minimumDeposit;
     uint256 internal _totalNonMaturedSaving;
+    address[] internal _owners;
 
     HashMapIndex.HashMapping private _savingAccountIndex;
     HashMapIndex.HashMapping private _depositIndex;
@@ -30,6 +31,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
     uint32 internal _standardInterestRatePercentageBase;
     /// @dev The total amount users deposit to this Saving contract minus the withdrawn principal
     uint256 internal _currentTotalContractDeposit;
+    uint256 internal _allTimeTotalContractDeposit;
 
     /// @dev The supported token which can be deposited to a Saving account.
     IERC20 internal _token;
@@ -113,6 +115,10 @@ contract GluwacoinSavingAccount is Initializable, Context {
         bytes memory identityHash
     ) internal returns (bytes32, bytes32) {
         require(
+            _allTimeTotalContractDeposit + initialDeposit <= _budget,
+            "GluwaSavingAccount: Budget is exceeded"
+        );
+        require(
             owner_ != address(0),
             "GluwaSavingAccount: Saving owner address must be defined"
         );
@@ -166,8 +172,9 @@ contract GluwacoinSavingAccount is Initializable, Context {
         _usedIdentityHash[identityHash] = true;
         _savingAccountIndex.add(accountHash_);
         _depositIndex.add(depositHash);
-
+        _owners.push(owner_);
         _currentTotalContractDeposit += initialDeposit;
+        _allTimeTotalContractDeposit += initialDeposit;
         emit CreateAccount(accountHash_, owner_);
         emit CreateDeposit(depositHash, owner_, initialDeposit);
 
@@ -188,10 +195,15 @@ contract GluwacoinSavingAccount is Initializable, Context {
         return true;
     }
 
-    function _deposit(address owner, uint256 amount)
-        internal
-        returns (bytes32)
-    {
+    function _deposit(
+        address owner,
+        uint256 amount,
+        uint256 dateTime
+    ) internal returns (bytes32) {
+        require(
+            _allTimeTotalContractDeposit + amount <= _budget,
+            "GluwaSavingAccount: Budget is exceeded"
+        );
         GluwaAccountModel.SavingAccount
             storage account = _addressSavingAccountMapping[owner];
 
@@ -206,6 +218,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         );
         account.totalDeposit += amount;
         _currentTotalContractDeposit += amount;
+        _allTimeTotalContractDeposit += amount;
         bytes32 depositHash = GluwaAccountModel.generateDepositHash(
             account.idx,
             amount,
@@ -215,7 +228,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         _depositStorage[depositHash] = GluwaAccountModel.Deposit({
             idx: _depositIndex.nextIdx,
             owner: owner,
-            creationDate: now,
+            creationDate: dateTime,
             amount: amount,
             accountIdx: account.idx
         });

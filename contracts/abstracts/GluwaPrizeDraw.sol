@@ -16,21 +16,25 @@ contract GluwaPrizeDraw is Initializable, Context {
 
     //IDepositableAccount private _depositContract;
     SimpleIndex.Index private _drawTicketIndex;
-
+    bool internal _suspendDeposit;
     uint8 internal _tokenDecimal;
     uint16 internal _tokenPerTicket;
     uint16 internal _ticketValidityTargetBlock;
     uint16 internal _cutOffTime; //total seconds from 12:00 am of the same date
     uint256 internal _nextDraw;
     uint256 internal _currentWinner;
-    uint32 internal _totalTicketPerBatch;
     uint256 internal _totalPrizeBroughForward;
     mapping(uint256 => DrawTicketModel.DrawTicket) internal _tickets;
-    mapping(bytes32 => uint256[]) internal _ticketsDepositMapping;
-    mapping(bytes32 => uint256) internal _totalTicketPerDeposit;
-    mapping(uint256 => DrawTicketModel.DrawTicketState) internal _validTickets;
     mapping(address => uint256[]) internal _addressValidTicketMapping;
     mapping(uint256 => uint256[]) internal _drawTicketMapping;
+    mapping(uint256 => mapping(address => uint256))
+        internal _drawParticipantTicket;
+    mapping(uint256 => address[]) internal _drawParticipant;
+    mapping(uint256 => uint256) internal _drawWinner;
+    mapping(uint256 => uint256) internal _totalDepositEachDraw;
+    mapping(uint256 => address[]) internal _drawWinningParticipant;
+    mapping(uint256 => bool) internal _prizePayingStatus;
+
     mapping(uint256 => mapping(uint256 => uint256))
         internal _ticketInUpcomingDraw;
 
@@ -39,13 +43,11 @@ contract GluwaPrizeDraw is Initializable, Context {
     function __GluwaPrizeDraw_init_unchained(
         uint8 tokenDecimal,
         uint16 tokenPerTicket,
-        uint16 ticketValidityTargetBlock,
-        uint32 totalTicketPerBatch
+        uint16 ticketValidityTargetBlock
     ) internal initializer {
         _tokenDecimal = tokenDecimal;
         _tokenPerTicket = tokenPerTicket;
         _ticketValidityTargetBlock = ticketValidityTargetBlock;
-        _totalTicketPerBatch = totalTicketPerBatch;
         _drawTicketIndex = SimpleIndex.Index({nextIdx: 1});
     }
 
@@ -69,49 +71,91 @@ contract GluwaPrizeDraw is Initializable, Context {
         return random;
     }
 
-    function _findWinner(uint256 drawTimeStamp)
-        internal
-        returns (DrawTicketModel.DrawTicket storage)
+    function findMaxMinForDraw(uint256 drawTimeStamp)
+        public
+        view
+        returns (uint256 max, uint256 min)
     {
-        uint256[] storage tickets = _drawTicketMapping[drawTimeStamp];
-        DrawTicketModel.DrawTicket storage first = _tickets[tickets[0]];
-        (uint56 ticketId, , , uint96 targetBlockNumber, ) = _getTicketDetails(
-            first.details
-        );
-        uint256 firstTicketNo = _generateTicketNumber(
-            ticketId,
-            targetBlockNumber,
-            first.owner
-        );
-        uint256 max = firstTicketNo;
-        uint256 min = firstTicketNo;
-        _nextDraw = drawTimeStamp;
-        require(_ticketInUpcomingDraw[_nextDraw][firstTicketNo] == 0, "GluwaPrizeDraw: the draw has been made");
-        _ticketInUpcomingDraw[_nextDraw][firstTicketNo] = ticketId;
-        for (uint256 i = 1; i < tickets.length; i++) {
-            DrawTicketModel.DrawTicket storage one = _tickets[tickets[i]];
-            (
-                uint56 t_ticketId,
-                ,
-                ,
-                uint96 t_targetBlockNumber,
-
-            ) = _getTicketDetails(one.details);
-            uint256 ticketNo = _generateTicketNumber(
-                t_ticketId,
-                t_targetBlockNumber,
-                one.owner
-            );
-            if (ticketNo > max) {
-                max = ticketNo;
-            } else if (ticketNo < min) {
-                min = ticketNo;
+        address[] storage participants = _drawParticipant[drawTimeStamp];
+        max = _tickets[_drawParticipantTicket[drawTimeStamp][participants[0]]]
+            .upper;
+        min = _tickets[_drawParticipantTicket[drawTimeStamp][participants[0]]]
+            .lower;
+        for (uint256 i = 1; i < participants.length; i++) {
+            if (
+                _tickets[_drawParticipantTicket[drawTimeStamp][participants[i]]]
+                    .upper > max
+            ) {
+                max = _tickets[
+                    _drawParticipantTicket[drawTimeStamp][participants[i]]
+                ].upper;
             }
-            _ticketInUpcomingDraw[_nextDraw][ticketNo] = t_ticketId;
+            if (
+                _tickets[_drawParticipantTicket[drawTimeStamp][participants[i]]]
+                    .lower < min
+            ) {
+                min = _tickets[
+                    _drawParticipantTicket[drawTimeStamp][participants[i]]
+                ].lower;
+            }
         }
-        uint256 winner = _randomNumber(min, max);
-        _currentWinner = winner;
-        return _tickets[_ticketInUpcomingDraw[_nextDraw][winner]];
+    }
+
+    function _findDrawWinner(uint256 drawTimeStamp) internal returns (uint256) {
+        require(
+            _drawWinner[drawTimeStamp] == 0,
+            "GluwaPrizeDraw: the draw has been made"
+        );
+        (uint256 min, uint256 max) = findMaxMinForDraw(drawTimeStamp);
+        _drawWinner[drawTimeStamp] = _randomNumber(min, max);
+        return _drawWinner[drawTimeStamp];
+    }
+
+    function getWinner(uint256 drawTimeStamp)
+        internal
+        view
+        returns (address[] memory result)
+    {
+        require(
+            _drawWinner[drawTimeStamp] > 0,
+            "GluwaPrizeDraw: the draw has not been made"
+        );
+        address[] storage participants = _drawParticipant[drawTimeStamp];
+        uint64 j;
+        for (uint256 i = 1; i < participants.length; i++) {
+            if (
+                _tickets[_drawParticipantTicket[drawTimeStamp][participants[i]]]
+                    .upper >=
+                _drawWinner[drawTimeStamp] &&
+                _tickets[_drawParticipantTicket[drawTimeStamp][participants[i]]]
+                    .lower >=
+                _drawWinner[drawTimeStamp]
+            ) {
+                result[j] = participants[i];
+                j++;
+            }
+        }
+    }
+
+    function _findWinner(uint256 drawTimeStamp) internal {
+        require(
+            _drawWinner[drawTimeStamp] > 0 &&
+                _drawWinningParticipant[drawTimeStamp].length == 0,
+            "GluwaPrizeDraw: problem when finding winner"
+        );
+        address[] storage participants = _drawParticipant[drawTimeStamp];
+        for (uint256 i = 1; i < participants.length; i++) {
+            if (
+                _tickets[_drawParticipantTicket[drawTimeStamp][participants[i]]]
+                    .upper >=
+                _drawWinner[drawTimeStamp] &&
+                _tickets[_drawParticipantTicket[drawTimeStamp][participants[i]]]
+                    .lower >=
+                _drawWinner[drawTimeStamp]
+            ) {
+                _drawWinningParticipant[drawTimeStamp].push(participants[i]);
+            }
+        }
     }
 
     function _generateTicketNumber(
@@ -158,18 +202,9 @@ contract GluwaPrizeDraw is Initializable, Context {
     function _createTicketForDeposit(
         address owner_,
         uint256 depositTimeStamp,
-        bytes32 referenceHash
-    ) internal returns (uint256[] memory) {
-        uint256 totalTickets = _totalTicketPerDeposit[referenceHash] -
-            _ticketsDepositMapping[referenceHash].length;
-        require(
-            totalTickets > 0,
-            "GluwaPrizeDraw: no more tickets can be created for this deposit"
-        );
-        uint32 maxProcssed = _totalTicketPerBatch;
-        if (totalTickets < _totalTicketPerBatch) {
-            maxProcssed = uint32(totalTickets);
-        }
+        uint256 ticketUpper,
+        uint256 ticketLower
+    ) internal returns (bool) {
         DateTimeModel.DateTime memory drawDateTime = DateTimeModel.toDateTime(
             depositTimeStamp
         );
@@ -206,75 +241,59 @@ contract GluwaPrizeDraw is Initializable, Context {
             drawDateTime.minute,
             drawDateTime.second
         );
-        uint256 details_ = uint256(block.number + _ticketValidityTargetBlock);
-        details_ |= depositTimeStamp << 96;
-        details_ |= drawTimeStamp << 144;
-        details_ |=
-            uint256(uint8(DrawTicketModel.DrawTicketState.Active)) <<
-            192;
-        for (
-            uint56 i = _drawTicketIndex.nextIdx;
-            i < _drawTicketIndex.nextIdx + maxProcssed;
-            i++
-        ) {
-            details_ |= uint256(i) << 200;
-            _tickets[i] = DrawTicketModel.DrawTicket({
-                details: details_,
-                owner: owner_
+        return _createTicket(owner_, drawTimeStamp, ticketUpper, ticketLower);
+    }
+
+    function _createTicket(
+        address owner_,
+        uint256 drawTimeStamp,
+        uint256 ticketUpper,
+        uint256 ticketLower
+    ) internal returns (bool) {
+        if (_drawParticipantTicket[drawTimeStamp][owner_] > 0) {
+             _totalDepositEachDraw[drawTimeStamp] += ticketUpper - ticketLower - _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].upper + _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].lower;
+            _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].upper = ticketUpper;
+            _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].lower = ticketLower;
+        } else {
+            uint256 identifier_ = uint256(_drawTicketIndex.nextIdx);
+            identifier_ |= uint160(owner_) << 96;
+            _tickets[_drawTicketIndex.nextIdx] = DrawTicketModel.DrawTicket({
+                identifier: identifier_,
+                upper: ticketUpper,
+                lower: ticketLower
             });
-            _addressValidTicketMapping[owner_].add(i);
-            _drawTicketMapping[drawTimeStamp].add(i);
-            _ticketsDepositMapping[referenceHash].add(i);
+            _totalDepositEachDraw[drawTimeStamp] += ticketUpper - ticketLower;
+            _drawParticipant[drawTimeStamp].push(owner_);
+            _drawParticipantTicket[drawTimeStamp][owner_] = _drawTicketIndex
+                .nextIdx;
+            _drawTicketMapping[drawTimeStamp].add(_drawTicketIndex.nextIdx);
+            _drawTicketIndex.set(_drawTicketIndex.nextIdx);
         }
-        _drawTicketIndex.set(_drawTicketIndex.nextIdx + maxProcssed);
+        return true;
     }
 
     function _getTicket(uint256 idx)
         internal
         view
         returns (
-            uint56 ticketId,
+            uint96 ticketId,
             address owner,
-            uint48 creationDate,
-            uint48 drawnDate,
-            uint96 targetBlockNumber,
-            uint8 state
+            uint256 lower,
+            uint256 upper
         )
     {
         DrawTicketModel.DrawTicket storage ticket = _tickets[idx];
-        owner = ticket.owner;
-        (
-            ticketId,
-            creationDate,
-            drawnDate,
-            targetBlockNumber,
-            state
-        ) = _getTicketDetails(ticket.details);
+        (ticketId, owner) = _getTicketDetails(ticket.identifier);
+        lower = ticket.lower;
+        upper = ticket.upper;
     }
 
     function _getTicketDetails(uint256 details)
         internal
         pure
-        returns (
-            uint56 ticketId,
-            uint48 creationDate,
-            uint48 drawnDate,
-            uint96 targetBlockNumber,
-            uint8 state
-        )
+        returns (uint96 ticketId, address owner)
     {
-        targetBlockNumber = uint96(details);
-        creationDate = uint48(details >> 96);
-        drawnDate = uint48(details >> 144);
-        state = uint8(details >> 192);
-        ticketId = uint56(details >> 200);
-    }
-
-    function _getTicketState(uint256 ticketNumber)
-        internal
-        view
-        returns (DrawTicketModel.DrawTicketState)
-    {
-        return _validTickets[ticketNumber];
+        ticketId = uint96(details);
+        owner = address(uint160(details >> 96));
     }
 }

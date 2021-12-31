@@ -19,14 +19,12 @@ library DrawTicketModel {
     }
 
     struct DrawTicket {
-        // Memory layout for ticket details:
-        // - 6 bytes for creationDate;
-        // - 6 bytes for drawnDate;
-        // - 12 bytes for targetBlockNumber;
-        // - 1 byte for state
-        // - 7 bytes for idx;
-        uint256 details;
-        // address of the ticket's owner
-        address owner;
+        // Memory layout for ticket identifier:    
+        // - 12 bytes for idx;
+        // - 20 bytes for owner address;
+        uint256 identifier;        
+        uint256 lower;        
+        uint256 upper;
     }
+    
 }
