@@ -19,11 +19,11 @@ async function getBondAccountState(gluwaBondVault, account) {
 
 async function getBondAccountIdx(gluwaBondVault, account) {
     const { 0: bondAccount_idx,
-      1: bondAccount_owner,
-      2: bondAccount_totalDeposit,
-      3: bondAccount_creationDate,
-      4: bondAccount_state,
-      5: bondAccount_securityReferenceHash } = (await gluwaBondVault.getBondAcountFor(account));
+        1: bondAccount_owner,
+        2: bondAccount_totalDeposit,
+        3: bondAccount_creationDate,
+        4: bondAccount_state,
+        5: bondAccount_securityReferenceHash } = (await gluwaBondVault.getBondAcountFor(account));
     return bondAccount_idx;
 }
 
@@ -47,4 +47,16 @@ async function getBondBalanceState(gluwaBondVault, bondBalanceHash) {
     return bondBalance_state;
 }
 
-module.exports = {generateTicketForDraw, getBondAccountState, getBondAccountIdx, getBondAccountHashByIdx, getBondBalanceState}
+function getTimeFromTimestamp(timestamp) {
+    // return the time format as HH:mm:ss
+    return new Date(timestamp * 1000).toISOString().slice(-13, -5);
+}
+
+const TOTAL_SECONDS_PER_DAY = 86400;
+
+module.exports = {
+    generateTicketForDraw, getBondAccountState,
+    getBondAccountIdx, getBondAccountHashByIdx,
+    getBondBalanceState, getTimeFromTimestamp,
+    TOTAL_SECONDS_PER_DAY
+}

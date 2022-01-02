@@ -1,5 +1,6 @@
 const { expect, use } = require('chai');
 const { solidity } = require('ethereum-waffle');
+const testHelper = require('./shared');
 
 use(solidity);
 
@@ -9,8 +10,6 @@ const decimals = 18;
 const standardMaturityTerm = 31536000; //365 days in timestamp
 const standardInterestRate = 15;
 const standardInterestRatePercentageBase = 100;
-const budget = 2000000;
-const TOTAL_SECONDS_PER_DAY = 86400;
 const TICKET_ACTIVE_STAGE = 1;
 const TICKET_EXPIRED_STAGE = 2;
 const TICKET_WON_STAGE = 3;
@@ -23,6 +22,8 @@ const withdrawFee = 5;
 const withdrawFeePercentageBase = 1000;
 const INVESTMENT_AMOUNT = 7000;
 const lowerLimitPercentage = 30;
+const decimalsVal = BigInt(10) ** BigInt(decimals);
+const budget = BigInt(20000000000) * decimalsVal;
 
 var ownerAddress;
 var owner;
@@ -31,7 +32,6 @@ var user2;
 var user3;
 var gluwaCoinAddress;
 var prizeLinkedAccountVaultAddress;
-var decimalsVal = BigInt(10) ** BigInt(decimals);
 var mintAmount = BigInt(2000000) * decimalsVal;
 var depositAmount = BigInt(200) * decimalsVal;
 var tokenPerTicket = 1;
@@ -104,16 +104,13 @@ describe('Gluwacoin', function () {
   });
 
   it('get prize-linked account info', async function () {
-    var currentTime = Math.floor(Date.now()/1000);
+    var currentTime = Math.floor(Date.now() / 1000);
     var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, depositAmount, user1.address);
     var receipt = await accountTxn.wait();
 
     var depositHash = receipt.events.filter(function (one) {
       return one.event == "CreateDeposit";
     })[0].args[0];
-
-    var ticketTxn = await prizeLinkedAccountVault.createPrizedLinkTickets(depositHash);
-    var txnBlock = ticketTxn.blockNumber;
 
     const { 0: savingAccount_idx,
       1: savingAccount_hash,
@@ -126,75 +123,54 @@ describe('Gluwacoin', function () {
       8: savingAccount_state,
       9: savingAccount_securityReferenceHash } = (await prizeLinkedAccountVault.getSavingAcountFor(user1.address));
 
-
     expect(savingAccount_owner).to.equal(user1.address);
     expect(savingAccount_state).to.equal(ACCOUNT_ACTIVE_STAGE);
     expect(savingAccount_totalDeposit).to.equal(depositAmount);
 
-    var ticketList = (await prizeLinkedAccountVault.getValidTicketIdFor(user1.address));
-    var firstTicketId = ticketList[0];
-    const {
-      0: idx,
-      1: owner,
-      2: creationDate,
-      3: drawnDate,
-      4: targetBlockNumber,
-      5: state
-    } = await prizeLinkedAccountVault.getTicketById(firstTicketId);
-    console.info(await prizeLinkedAccountVault.test(user1.address));
-    expect(owner).to.equal(user1.address);
-    expect(state).to.equal(TICKET_ACTIVE_STAGE);
-    expect(targetBlockNumber).to.equal(txnBlock + ticketValidityTargetBlock);
-    expect(parseInt(creationDate)).to.greaterThan(currentTime);
-    expect(parseInt(drawnDate)).to.greaterThan(parseInt(creationDate));
+    var ticketEvent = receipt.events.filter(function (one) {
+      return one.event == "CreateTicket";
+    })[0].args;
 
-    for (var i = 1; i < ticketList.length; i++) {
-      const {
-        0: t_idx,
-        1: t_owner,
-        2: t_creationDate,
-        3: t_drawnDate,
-        4: t_targetBlockNumber,
-        5: t_state
-      } = await prizeLinkedAccountVault.getTicketById(ticketList[i]);
-  
-      expect(t_owner).to.equal(user1.address);
-      expect(t_state).to.equal(TICKET_ACTIVE_STAGE);
-      expect(t_targetBlockNumber).to.equal(targetBlockNumber);
-      expect(parseInt(t_creationDate)).to.equal(creationDate);
-      expect(parseInt(t_drawnDate)).to.equal(parseInt(drawnDate));
-    }
+    var drawDate = ticketEvent[0];
+    var ticketId = ticketEvent[1];
+    var owner = ticketEvent[2];
+    var upper = BigInt(ticketEvent[3]);
+    var lower = BigInt(ticketEvent[4]);
 
-    var k = ticketList.length;
-    ticketTxn = await prizeLinkedAccountVault.createPrizedLinkTickets(depositHash);
-    txnBlock = ticketTxn.blockNumber;
-    ticketList = (await prizeLinkedAccountVault.getValidTicketIdFor(user1.address));
-    for (var i = k; i < ticketList.length; i++) {
-      const {
-        0: t_idx,
-        1: t_owner,
-        2: t_creationDate,
-        3: t_drawnDate,
-        4: t_targetBlockNumber,
-        5: t_state
-      } = await prizeLinkedAccountVault.getTicketById(ticketList[i]);
-  
-      expect(t_owner).to.equal(user1.address);
-      expect(t_state).to.equal(TICKET_ACTIVE_STAGE);
-      expect(t_targetBlockNumber).to.equal(txnBlock + ticketValidityTargetBlock);
-      expect(parseInt(t_creationDate)).to.equal(creationDate);
-      expect(parseInt(t_drawnDate)).to.equal(parseInt(drawnDate));
-    }
+    console.info(drawDate + " " + ticketId);
 
-    expect(BigInt(ticketList.length)).to.equal(BigInt(depositAmount / decimalsVal));
+    const { 0: deposit_idx,
+      1: deposit_accountId,
+      2: deposit_owner,
+      3: deposit_creationDate,
+      4: deposit_amount } = (await prizeLinkedAccountVault.getDeposit(depositHash));
 
+    console.info(deposit_creationDate);
+
+    expect(testHelper.getTimeFromTimestamp(drawDate)).to.equal("17:00:00");
+    var timeStampDiff = drawDate - parseInt(deposit_creationDate);
+    expect(timeStampDiff).to.greaterThan(testHelper.TOTAL_SECONDS_PER_DAY);
+    expect(2 * testHelper.TOTAL_SECONDS_PER_DAY).to.greaterThan(timeStampDiff);
+
+    expect(upper - lower).to.equal(depositAmount);
+    expect(deposit_amount).to.equal(depositAmount);
+
+    const { 0: ticket_idx,
+      1: ticket_owner,
+      2: ticket_upper,
+      3: ticket_lower } = (await prizeLinkedAccountVault.getTicketById(ticketId));
+
+      expect(upper).to.equal(ticket_upper);
+      expect(lower).to.equal(ticket_lower);
+      expect(owner).to.equal(ticket_owner);
+      expect(owner).to.equal(user1.address);
 
   });
 
   it('measure the total deposit into contract', async function () {
     await gluwaCoin.connect(user1).approve(prizeLinkedAccountVaultAddress, depositAmount * BigInt(10));
     await gluwaCoin.connect(user2).approve(prizeLinkedAccountVaultAddress, depositAmount * BigInt(10));
-    
+
     await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, depositAmount * BigInt(4), user1.address);
     await prizeLinkedAccountVault.createPrizedLinkAccount(user2.address, depositAmount * BigInt(3), user2.address);
 
@@ -204,7 +180,7 @@ describe('Gluwacoin', function () {
 
   it('multiple deposits into one account', async function () {
     await gluwaCoin.connect(user1).approve(prizeLinkedAccountVaultAddress, depositAmount * BigInt(10));
-    
+
     await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, depositAmount * BigInt(4), user1.address);
     await prizeLinkedAccountVault.depositPrizedLinkAccount(user1.address, depositAmount * BigInt(3));
     await prizeLinkedAccountVault.depositPrizedLinkAccount(user1.address, depositAmount * BigInt(2));

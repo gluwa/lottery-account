@@ -121,7 +121,7 @@ library DateTimeModel {
         monthDayCounts[10] = 30;
         monthDayCounts[11] = 31;
 
-        for (i = 0; i < month; i++) {
+        for (i = 0; i < month - 1; i++) {
             timeStamp += DAY_IN_SECOND * monthDayCounts[i];
         }
     }

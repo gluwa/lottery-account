@@ -255,7 +255,18 @@ contract GluwacoinSavingAccount is Initializable, Context {
             uint256,
             uint256
         )
-    {}
+    {
+        GluwaAccountModel.Deposit storage deposit = _depositStorage[
+            depositHash
+        ];
+        return (
+            deposit.idx,
+            deposit.accountIdx,
+            deposit.owner,
+            deposit.creationDate,
+            deposit.amount
+        );
+    }
 
     function getSavingAcount()
         external

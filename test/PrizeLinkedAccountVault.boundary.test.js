@@ -1,6 +1,7 @@
+const { ContractFactory } = require('@ethersproject/contracts');
 const { expect, use } = require('chai');
 const { solidity } = require('ethereum-waffle');
-const { Wallet, ethers } = require('ethers');
+const testHelper = require('./shared');
 
 use(solidity);
 
@@ -10,7 +11,6 @@ const decimals = 18;
 const standardMaturityTerm = 31536000; //365 days in timestamp
 const standardInterestRate = 15;
 const standardInterestRatePercentageBase = 100;
-const budget = 2000000;
 const TOTAL_SECONDS_PER_DAY = 86400;
 const TICKET_ACTIVE_STAGE = 1;
 const TICKET_EXPIRED_STAGE = 2;
@@ -24,19 +24,19 @@ const withdrawFee = 5;
 const withdrawFeePercentageBase = 1000;
 const INVESTMENT_AMOUNT = 7000;
 const lowerLimitPercentage = 30;
+const decimalsVal = BigInt(10) ** BigInt(decimals);
+const budget = BigInt(20000000000) * decimalsVal;
 
 var ownerAddress;
 var owner;
 var user1;
 var gluwaCoinAddress;
 var prizeLinkedAccountVaultAddress;
-var decimalsVal = BigInt(10) ** BigInt(decimals);
-var mintAmount = BigInt(2000000) * decimalsVal;
-var depositBaseAmount = BigInt(7000);
-var depositAmount = depositBaseAmount * decimalsVal;
-var smallDepositBaseAmount = BigInt(100000);
-var smallDepositAmount = smallDepositBaseAmount * decimalsVal;
-var targetAccountCreated = 30;
+var large_mintAmount = BigInt(2000000000) * decimalsVal;
+var large_depositBaseAmount = BigInt(700000);
+var depositAmount = large_depositBaseAmount * decimalsVal;
+var large_depositAmount = large_depositBaseAmount * decimalsVal * BigInt(10);
+var targetAccountCreated = 2000;
 var tokenPerTicket = 1;
 var ticketValidityTargetBlock = 20;
 var prizeLinkedAccountVault;
@@ -78,64 +78,83 @@ describe('Gluwacoin', function () {
     prizeLinkedAccountVaultAddress = prizeLinkedAccountVault.address;
     prizeLinkedAccountVault.initialize(ownerAddress, gluwaCoinAddress, standardInterestRate,
       standardInterestRatePercentageBase, standardMaturityTerm, budget, tokenPerTicket, ticketValidityTargetBlock, totalTicketPerBatch);
-    gluwaCoin.mint(ownerAddress, depositAmount);
-    gluwaCoin.mint(user1.address, depositAmount);
-    await gluwaCoin.connect(user1).approve(prizeLinkedAccountVaultAddress, depositAmount);
+    gluwaCoin.mint(ownerAddress, large_mintAmount);
+    gluwaCoin.mint(user1.address, large_mintAmount);
+    await gluwaCoin.connect(user1).approve(prizeLinkedAccountVaultAddress, large_mintAmount);
   });
 
 
 
   it('create prize-linked account with many tickets', async function () {
-    var currentTime = Math.floor(Date.now() / 1000);
-    var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, depositAmount, user1.address);
+    var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(user1.address, large_depositAmount, user1.address);
     var receipt = await accountTxn.wait();
 
-    var depositHash = receipt.events.filter(function (one) {
-      return one.event == "CreateDeposit";
-    })[0].args[0];
-    var processed = 0;
-    while (processed < depositBaseAmount) {
-      await prizeLinkedAccountVault.createPrizedLinkTickets(depositHash);
-      processed += totalTicketPerBatch;
-    }
+    var ticketEvent = receipt.events.filter(function (one) {
+      return one.event == "CreateTicket";
+    })[0].args;
 
-    var ticketList = (await prizeLinkedAccountVault.getValidTicketIdFor(user1.address));
-    console.info(ticketList.length);
+    var drawDate = ticketEvent[0];
+    var ticketId = ticketEvent[1];
+    var owner = ticketEvent[2];
+    var upper = BigInt(ticketEvent[3]);
+    var lower = BigInt(ticketEvent[4]);
 
 
+    const { 0: ticket_idx,
+      1: ticket_owner,
+      2: ticket_upper,
+      3: ticket_lower } = (await prizeLinkedAccountVault.getTicketById(ticketId));
 
-  });
+    expect(upper).to.equal(ticket_upper.toString());
+    expect(lower).to.equal(ticket_lower.toString());
+    expect(owner).to.equal(ticket_owner);
+    expect(owner).to.equal(user1.address);
 
-  it('create prize-linked account with many tickets', async function () {
-
-
-    for (var i = 0; i < targetAccountCreated; i++) {
-      console.info(i);
-      var temp = await ethers.Wallet.createRandom();
-      await gluwaCoin.mint(temp.address, depositAmount);
-      await bank1.sendTransaction({
-        to: temp.address,
-        value: ethers.utils.parseEther(100000)
-      });
-      await gluwaCoin.connect(temp).approve(prizeLinkedAccountVaultAddress, depositAmount);
-      console.info(temp.address);
-
-      var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, smallDepositAmount, temp.address);
-      var receipt = await accountTxn.wait();
-      var depositHash = receipt.events.filter(function (one) {
-        return one.event == "CreateDeposit";
-      })[0].args[0];
-      var processed = 0;
-      while (processed < smallDepositBaseAmount) {
-        await prizeLinkedAccountVault.createPrizedLinkTickets(depositHash);
-        processed += totalTicketPerBatch;
-      }
-    }
-
-
+    expect(testHelper.getTimeFromTimestamp(drawDate)).to.equal("17:00:00");
+    expect(upper - lower).to.equal(large_depositAmount);
 
   });
+
+
+});
+
+it('create multiple prize-linked accounts with many tickets', async function () {
+
+
+  for (var i = 0; i < targetAccountCreated; i++) {
+    var temp = await ethers.Wallet.createRandom();
+    console.info(temp.address);
+    console.info(gluwaCoin);
+    await gluwaCoin.mint(temp.address, large_mintAmount);
+    await bank1.sendTransaction({
+      to: temp.address,
+      value: ethers.utils.parseEther(1)
+    });
+    await gluwaCoin.connect(temp).approve(prizeLinkedAccountVaultAddress, depositAmount);
+    console.info(temp.address);
+
+    var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, smallDepositAmount, temp.address);
+    var receipt = await accountTxn.wait();
+
+    var ticketEvent = receipt.events.filter(function (one) {
+      return one.event == "CreateTicket";
+    })[0].args;
+
+    var drawDate = ticketEvent[0];
+    var ticketId = ticketEvent[1];
+    var owner = ticketEvent[2];
+    var upper = BigInt(ticketEvent[3]);
+    var lower = BigInt(ticketEvent[4]);
+
+    expect(upper - lower).to.equal(large_depositAmount);
+    expect(owner).to.equal(user1.address);
+    expect(testHelper.getTimeFromTimestamp(drawDate)).to.equal("17:00:00");
+
+  }
 
 
 
 });
+
+
+

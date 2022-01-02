@@ -40,6 +40,8 @@ contract GluwaPrizeDraw is Initializable, Context {
 
     event Winner(address winner, uint256 ticket, uint256 reward);
 
+    event CreateTicket(uint256 indexed drawTimeStamp, uint256 indexed ticketId, address indexed owner, uint256 upper, uint256 lower);
+
     function __GluwaPrizeDraw_init_unchained(
         uint8 tokenDecimal,
         uint16 tokenPerTicket,
@@ -251,9 +253,17 @@ contract GluwaPrizeDraw is Initializable, Context {
         uint256 ticketLower
     ) internal returns (bool) {
         if (_drawParticipantTicket[drawTimeStamp][owner_] > 0) {
-             _totalDepositEachDraw[drawTimeStamp] += ticketUpper - ticketLower - _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].upper + _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].lower;
-            _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].upper = ticketUpper;
-            _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].lower = ticketLower;
+            _totalDepositEachDraw[drawTimeStamp] +=
+                ticketUpper -
+                ticketLower -
+                _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].upper +
+                _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].lower;
+            _tickets[_drawParticipantTicket[drawTimeStamp][owner_]]
+                .upper = ticketUpper;
+            _tickets[_drawParticipantTicket[drawTimeStamp][owner_]]
+                .lower = ticketLower;
+            (uint256 ticketId,) = _getTicketDetails(_tickets[_drawParticipantTicket[drawTimeStamp][owner_]].identifier);
+            emit CreateTicket(drawTimeStamp, ticketId, owner_, ticketUpper, ticketLower);
         } else {
             uint256 identifier_ = uint256(_drawTicketIndex.nextIdx);
             identifier_ |= uint160(owner_) << 96;
@@ -267,8 +277,9 @@ contract GluwaPrizeDraw is Initializable, Context {
             _drawParticipantTicket[drawTimeStamp][owner_] = _drawTicketIndex
                 .nextIdx;
             _drawTicketMapping[drawTimeStamp].add(_drawTicketIndex.nextIdx);
-            _drawTicketIndex.set(_drawTicketIndex.nextIdx);
-        }
+            emit CreateTicket(drawTimeStamp, _drawTicketIndex.nextIdx, owner_, ticketUpper, ticketLower);
+            _drawTicketIndex.set(_drawTicketIndex.nextIdx);            
+        }        
         return true;
     }
 
