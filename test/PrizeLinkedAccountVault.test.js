@@ -134,10 +134,8 @@ describe('Gluwacoin', function () {
     var drawDate = ticketEvent[0];
     var ticketId = ticketEvent[1];
     var owner = ticketEvent[2];
-    var upper = BigInt(ticketEvent[3]);
-    var lower = BigInt(ticketEvent[4]);
-
-    console.info(drawDate + " " + ticketId);
+    var lower = BigInt(ticketEvent[3]);
+    var upper = BigInt(ticketEvent[4]);       
 
     const { 0: deposit_idx,
       1: deposit_accountId,
@@ -157,8 +155,8 @@ describe('Gluwacoin', function () {
 
     const { 0: ticket_idx,
       1: ticket_owner,
-      2: ticket_upper,
-      3: ticket_lower } = (await prizeLinkedAccountVault.getTicketById(ticketId));
+      2: ticket_lower,
+      3: ticket_upper    } = (await prizeLinkedAccountVault.getTicketById(ticketId));
 
       expect(upper).to.equal(ticket_upper);
       expect(lower).to.equal(ticket_lower);

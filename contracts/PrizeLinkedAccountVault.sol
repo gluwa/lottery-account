@@ -113,8 +113,8 @@ contract PrizeLinkedAccountVault is
         _createTicketForDeposit(
             deposit.owner,
             deposit.creationDate,
-            lower + deposit.amount,
-            lower
+            lower,
+            lower + deposit.amount
         );
         return true;
     }
@@ -143,11 +143,10 @@ contract PrizeLinkedAccountVault is
         returns (uint256)
     {
         uint256 processed;
-         uint256 base = uint256(_msgSender()) +
-            _allTimeTotalContractDeposit;
+        uint256 base = uint256(_msgSender()) + _allTimeTotalContractDeposit;
         for (uint256 i = 0; i < _owners.length; i++) {
             if (
-                   _drawParticipantTicket[drawTimeStamp][_owners[i]] == 0 &&
+                _drawParticipantTicket[drawTimeStamp][_owners[i]] == 0 &&
                 _addressSavingAccountMapping[_owners[i]].totalDeposit > 0 &&
                 _addressSavingAccountMapping[_owners[i]].state ==
                 GluwaAccountModel.AccountState.Active
@@ -155,7 +154,8 @@ contract PrizeLinkedAccountVault is
                 _createTicket(
                     _owners[i],
                     drawTimeStamp,
-                    uint256(_owners[i]) + base +
+                    uint256(_owners[i]) +
+                        base +
                         _addressSavingAccountMapping[_owners[i]].totalDeposit,
                     uint256(_owners[i]) + base
                 );
@@ -206,7 +206,7 @@ contract PrizeLinkedAccountVault is
             uint96,
             address,
             uint256,
-            uint256            
+            uint256
         )
     {
         return _getTicket(idx);

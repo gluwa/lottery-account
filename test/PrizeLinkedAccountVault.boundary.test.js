@@ -96,17 +96,17 @@ describe('Gluwacoin', function () {
     var drawDate = ticketEvent[0];
     var ticketId = ticketEvent[1];
     var owner = ticketEvent[2];
-    var upper = BigInt(ticketEvent[3]);
-    var lower = BigInt(ticketEvent[4]);
+    var lower = BigInt(ticketEvent[3]);
+    var upper = BigInt(ticketEvent[4]);    
 
-
+   
     const { 0: ticket_idx,
       1: ticket_owner,
-      2: ticket_upper,
-      3: ticket_lower } = (await prizeLinkedAccountVault.getTicketById(ticketId));
-
-    expect(upper).to.equal(ticket_upper.toString());
-    expect(lower).to.equal(ticket_lower.toString());
+      2: ticket_lower,
+      3: ticket_upper    } = (await prizeLinkedAccountVault.getTicketById(ticketId));
+ 
+    expect(upper).to.equal(ticket_upper);
+    expect(lower).to.equal(ticket_lower);
     expect(owner).to.equal(ticket_owner);
     expect(owner).to.equal(user1.address);
 
@@ -116,24 +116,20 @@ describe('Gluwacoin', function () {
   });
 
 
-});
-
 it('create multiple prize-linked accounts with many tickets', async function () {
 
 
   for (var i = 0; i < targetAccountCreated; i++) {
-    var temp = await ethers.Wallet.createRandom();
-    console.info(temp.address);
-    console.info(gluwaCoin);
+    var temp = await ethers.Wallet.createRandom();   
     await gluwaCoin.mint(temp.address, large_mintAmount);
     await bank1.sendTransaction({
       to: temp.address,
-      value: ethers.utils.parseEther(1)
+      value: ethers.utils.parseEther("1")
     });
-    await gluwaCoin.connect(temp).approve(prizeLinkedAccountVaultAddress, depositAmount);
-    console.info(temp.address);
+    
+    await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVaultAddress, depositAmount);
 
-    var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, smallDepositAmount, temp.address);
+    var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, depositAmount, temp.address);
     var receipt = await accountTxn.wait();
 
     var ticketEvent = receipt.events.filter(function (one) {
@@ -141,16 +137,19 @@ it('create multiple prize-linked accounts with many tickets', async function () 
     })[0].args;
 
     var drawDate = ticketEvent[0];
-    var ticketId = ticketEvent[1];
     var owner = ticketEvent[2];
-    var upper = BigInt(ticketEvent[3]);
-    var lower = BigInt(ticketEvent[4]);
+    var lower = BigInt(ticketEvent[3]);
+    var upper = BigInt(ticketEvent[4]);    
 
     expect(upper - lower).to.equal(large_depositAmount);
     expect(owner).to.equal(user1.address);
     expect(testHelper.getTimeFromTimestamp(drawDate)).to.equal("17:00:00");
 
   }
+
+
+
+});
 
 
 

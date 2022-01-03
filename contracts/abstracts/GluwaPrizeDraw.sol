@@ -40,7 +40,13 @@ contract GluwaPrizeDraw is Initializable, Context {
 
     event Winner(address winner, uint256 ticket, uint256 reward);
 
-    event CreateTicket(uint256 indexed drawTimeStamp, uint256 indexed ticketId, address indexed owner, uint256 upper, uint256 lower);
+    event CreateTicket(
+        uint256 indexed drawTimeStamp,
+        uint256 indexed ticketId,
+        address indexed owner,
+        uint256 upper,
+        uint256 lower
+    );
 
     function __GluwaPrizeDraw_init_unchained(
         uint8 tokenDecimal,
@@ -204,8 +210,8 @@ contract GluwaPrizeDraw is Initializable, Context {
     function _createTicketForDeposit(
         address owner_,
         uint256 depositTimeStamp,
-        uint256 ticketUpper,
-        uint256 ticketLower
+        uint256 ticketLower,
+        uint256 ticketUpper
     ) internal returns (bool) {
         DateTimeModel.DateTime memory drawDateTime = DateTimeModel.toDateTime(
             depositTimeStamp
@@ -243,14 +249,14 @@ contract GluwaPrizeDraw is Initializable, Context {
             drawDateTime.minute,
             drawDateTime.second
         );
-        return _createTicket(owner_, drawTimeStamp, ticketUpper, ticketLower);
+        return _createTicket(owner_, drawTimeStamp, ticketLower, ticketUpper);
     }
 
     function _createTicket(
         address owner_,
         uint256 drawTimeStamp,
-        uint256 ticketUpper,
-        uint256 ticketLower
+        uint256 ticketLower,
+        uint256 ticketUpper
     ) internal returns (bool) {
         if (_drawParticipantTicket[drawTimeStamp][owner_] > 0) {
             _totalDepositEachDraw[drawTimeStamp] +=
@@ -259,27 +265,42 @@ contract GluwaPrizeDraw is Initializable, Context {
                 _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].upper +
                 _tickets[_drawParticipantTicket[drawTimeStamp][owner_]].lower;
             _tickets[_drawParticipantTicket[drawTimeStamp][owner_]]
-                .upper = ticketUpper;
-            _tickets[_drawParticipantTicket[drawTimeStamp][owner_]]
                 .lower = ticketLower;
-            (uint256 ticketId,) = _getTicketDetails(_tickets[_drawParticipantTicket[drawTimeStamp][owner_]].identifier);
-            emit CreateTicket(drawTimeStamp, ticketId, owner_, ticketUpper, ticketLower);
+            _tickets[_drawParticipantTicket[drawTimeStamp][owner_]]
+                .upper = ticketUpper;
+            (uint256 ticketId, ) = _getTicketDetails(
+                _tickets[_drawParticipantTicket[drawTimeStamp][owner_]]
+                    .identifier
+            );
+            emit CreateTicket(
+                drawTimeStamp,
+                ticketId,
+                owner_,
+                ticketLower,
+                ticketUpper
+            );
         } else {
-            uint256 identifier_ = uint256(_drawTicketIndex.nextIdx);
-            identifier_ |= uint160(owner_) << 96;
+            uint256 identifier_ = uint256(owner_);
+            identifier_ |= uint256(_drawTicketIndex.nextIdx) << 160;
             _tickets[_drawTicketIndex.nextIdx] = DrawTicketModel.DrawTicket({
                 identifier: identifier_,
-                upper: ticketUpper,
-                lower: ticketLower
+                lower: ticketLower,
+                upper: ticketUpper
             });
             _totalDepositEachDraw[drawTimeStamp] += ticketUpper - ticketLower;
             _drawParticipant[drawTimeStamp].push(owner_);
             _drawParticipantTicket[drawTimeStamp][owner_] = _drawTicketIndex
                 .nextIdx;
             _drawTicketMapping[drawTimeStamp].add(_drawTicketIndex.nextIdx);
-            emit CreateTicket(drawTimeStamp, _drawTicketIndex.nextIdx, owner_, ticketUpper, ticketLower);
-            _drawTicketIndex.set(_drawTicketIndex.nextIdx);            
-        }        
+            emit CreateTicket(
+                drawTimeStamp,
+                _drawTicketIndex.nextIdx,
+                owner_,
+                ticketLower,
+                ticketUpper
+            );
+            _drawTicketIndex.set(_drawTicketIndex.nextIdx);
+        }
         return true;
     }
 
@@ -304,7 +325,8 @@ contract GluwaPrizeDraw is Initializable, Context {
         pure
         returns (uint96 ticketId, address owner)
     {
-        ticketId = uint96(details);
-        owner = address(uint160(details >> 96));
+        owner = address(details);
+        ticketId = uint96(details >> 160);
+        
     }
 }

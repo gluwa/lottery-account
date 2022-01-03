@@ -298,8 +298,8 @@
       ]
     },
     "/home/osboxes/prize-linked-account/contracts/PrizeLinkedAccountVault.sol": {
-      "lastModificationDate": 1640969248296,
-      "contentHash": "0e4c3be4164cdea17f63331d0298debb",
+      "lastModificationDate": 1641230701962,
+      "contentHash": "254db88e60372a82c40c6dd355823abe",
       "sourceName": "contracts/PrizeLinkedAccountVault.sol",
       "solcConfig": {
         "version": "0.5.0",
@@ -338,8 +338,8 @@
       ]
     },
     "/home/osboxes/prize-linked-account/contracts/abstracts/GluwaPrizeDraw.sol": {
-      "lastModificationDate": 1641059433636,
-      "contentHash": "3425ff5682953d2014ba27890bc0fedc",
+      "lastModificationDate": 1641230745992,
+      "contentHash": "5c3220fde2273d4d6cd7a62a6feefb94",
       "sourceName": "contracts/abstracts/GluwaPrizeDraw.sol",
       "solcConfig": {
         "version": "0.5.0",
