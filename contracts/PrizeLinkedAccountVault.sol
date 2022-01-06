@@ -11,7 +11,9 @@ contract PrizeLinkedAccountVault is
 {
     event Winner(address winner, uint256 ticket, uint256 reward);
 
-    uint256 private _processingCap;
+    uint8 internal _blockNumberFactor; // 1st Factor to ensure the chance 2 userss tickets in a draw overlapping each other is very low
+    uint32 private _processingCap;
+    uint128 internal _ticketRangeFactor; // 2nd Factor to ensure the chance 2 userss tickets in a draw overlapping each other is very low
 
     function initialize(
         address admin,
@@ -22,7 +24,9 @@ contract PrizeLinkedAccountVault is
         uint256 budget,
         uint16 tokenPerTicket,
         uint16 ticketValidityTargetBlock,
-        uint32 processingCap
+        uint32 processingCap,
+        uint8 blockNumberFactor,
+        uint128 ticketRangeFactor
     ) external initializer {
         __VaultControl_Init(admin);
         __GluwacoinSavingAccount_init_unchained(
@@ -38,6 +42,8 @@ contract PrizeLinkedAccountVault is
             ticketValidityTargetBlock
         );
         _processingCap = processingCap;
+        _ticketRangeFactor = ticketRangeFactor;
+        _blockNumberFactor = blockNumberFactor;
     }
 
     function prizeDraw(uint256 drawTimeStamp)
@@ -64,6 +70,21 @@ contract PrizeLinkedAccountVault is
         }
         return true;
     }
+
+    function findDrawWinnerV1(uint256 drawTimeStamp, uint256 seed)
+        external
+        onlyOperator
+        returns (uint256)
+    {
+        bytes memory temp = new bytes(32);
+        address sender = address(this);
+        assembly {
+            mstore(add(temp, 32), xor(seed,sender))
+        }
+        return _findDrawWinner(drawTimeStamp, temp);
+    }
+
+  
 
     function createPrizedLinkAccount(
         address owner,
@@ -107,16 +128,25 @@ contract PrizeLinkedAccountVault is
             deposit.creationDate > 0,
             "GluwaPrizeDraw: The deposit is not found"
         );
-        uint256 lower = uint256(deposit.owner) +
-            uint256(_msgSender()) +
+        uint256 lower = _ticketRangeFactor +
+            block.number *
+            _blockNumberFactor +
             _allTimeTotalContractDeposit;
         _createTicketForDeposit(
             deposit.owner,
             deposit.creationDate,
             lower,
-            lower + deposit.amount
+            lower + _convertDepositToTotalTicket(deposit.amount)
         );
         return true;
+    }
+
+    function _convertDepositToTotalTicket(uint256 amount)
+        private
+        view
+        returns (uint256)
+    {
+        return (amount * _tokenPerTicket) / (10**uint256(_token.decimals()));
     }
 
     function getEligibleAddressPendingAddedToDraw(uint256 drawTimeStamp)
@@ -142,8 +172,10 @@ contract PrizeLinkedAccountVault is
         external
         returns (uint256)
     {
-        uint256 processed;
-        uint256 base = uint256(_msgSender()) + _allTimeTotalContractDeposit;
+        uint32 processed;
+        uint256 base = block.number *
+            _blockNumberFactor +
+            _allTimeTotalContractDeposit;
         for (uint256 i = 0; i < _owners.length; i++) {
             if (
                 _drawParticipantTicket[drawTimeStamp][_owners[i]] == 0 &&
@@ -154,10 +186,14 @@ contract PrizeLinkedAccountVault is
                 _createTicket(
                     _owners[i],
                     drawTimeStamp,
-                    uint256(_owners[i]) +
+                    _ticketRangeFactor * processed + base,
+                    _ticketRangeFactor *
+                        processed +
                         base +
-                        _addressSavingAccountMapping[_owners[i]].totalDeposit,
-                    uint256(_owners[i]) + base
+                        _convertDepositToTotalTicket(
+                            _addressSavingAccountMapping[_owners[i]]
+                                .totalDeposit
+                        )
                 );
                 processed++;
                 if (processed > _processingCap) break;

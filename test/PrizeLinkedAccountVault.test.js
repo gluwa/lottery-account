@@ -4,24 +4,22 @@ const testHelper = require('./shared');
 
 use(solidity);
 
-const name = 'Gluwabond';
-const symbol = 'Gluwabond';
+const name = 'Gluwacoin';
+const symbol = 'Gluwacoin';
 const decimals = 18;
 const standardMaturityTerm = 31536000; //365 days in timestamp
 const standardInterestRate = 15;
 const standardInterestRatePercentageBase = 100;
-const TICKET_ACTIVE_STAGE = 1;
-const TICKET_EXPIRED_STAGE = 2;
-const TICKET_WON_STAGE = 3;
 const ACCOUNT_ACTIVE_STAGE = 1;
 const ACCOUNT_DEFAULT_STAGE = 2;
 const ACCOUNT_LOCKED_STAGE = 3;
-const EPOCH_TIMESTAMP_1YEAR_AGO = Date.now() - standardMaturityTerm;
 const transferFee = 1000;
 const withdrawFee = 5;
 const withdrawFeePercentageBase = 1000;
 const INVESTMENT_AMOUNT = 7000;
 const lowerLimitPercentage = 30;
+const blockNumbeFactor = 2;
+const ticketRangeFactor = 1000000;
 const decimalsVal = BigInt(10) ** BigInt(decimals);
 const budget = BigInt(20000000000) * decimalsVal;
 
@@ -74,7 +72,7 @@ describe('Gluwacoin', function () {
     gluwaCoinAddress = gluwaCoin.address;
     prizeLinkedAccountVaultAddress = prizeLinkedAccountVault.address;
     prizeLinkedAccountVault.initialize(ownerAddress, gluwaCoinAddress, standardInterestRate,
-      standardInterestRatePercentageBase, standardMaturityTerm, budget, tokenPerTicket, ticketValidityTargetBlock, totalTicketPerBatch);
+      standardInterestRatePercentageBase, standardMaturityTerm, budget, tokenPerTicket, ticketValidityTargetBlock, totalTicketPerBatch, blockNumbeFactor, ticketRangeFactor);
     gluwaCoin.mint(ownerAddress, mintAmount);
     gluwaCoin.mint(user1.address, mintAmount);
     gluwaCoin.mint(user2.address, mintAmount);
@@ -134,8 +132,8 @@ describe('Gluwacoin', function () {
     var drawDate = ticketEvent[0];
     var ticketId = ticketEvent[1];
     var owner = ticketEvent[2];
-    var lower = BigInt(ticketEvent[3]);
-    var upper = BigInt(ticketEvent[4]);       
+    var lower = ticketEvent[3];
+    var upper = ticketEvent[4];       
 
     const { 0: deposit_idx,
       1: deposit_accountId,
@@ -150,7 +148,8 @@ describe('Gluwacoin', function () {
     expect(timeStampDiff).to.greaterThan(testHelper.TOTAL_SECONDS_PER_DAY);
     expect(2 * testHelper.TOTAL_SECONDS_PER_DAY).to.greaterThan(timeStampDiff);
 
-    expect(upper - lower).to.equal(depositAmount);
+    var range = BigInt(upper) - BigInt(lower);
+    expect(range).to.equal((depositAmount / decimalsVal));
     expect(deposit_amount).to.equal(depositAmount);
 
     const { 0: ticket_idx,

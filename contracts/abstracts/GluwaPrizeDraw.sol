@@ -35,9 +35,6 @@ contract GluwaPrizeDraw is Initializable, Context {
     mapping(uint256 => address[]) internal _drawWinningParticipant;
     mapping(uint256 => bool) internal _prizePayingStatus;
 
-    mapping(uint256 => mapping(uint256 => uint256))
-        internal _ticketInUpcomingDraw;
-
     event Winner(address winner, uint256 ticket, uint256 reward);
 
     event CreateTicket(
@@ -59,7 +56,7 @@ contract GluwaPrizeDraw is Initializable, Context {
         _drawTicketIndex = SimpleIndex.Index({nextIdx: 1});
     }
 
-    function _randomNumber(uint256 min, uint256 max)
+    function _randomNumber(uint256 min, uint256 max, bytes memory externalFactor)
         internal
         view
         returns (uint256)
@@ -68,6 +65,7 @@ contract GluwaPrizeDraw is Initializable, Context {
             keccak256(
                 abi.encodePacked(
                     now,
+                    externalFactor,
                     blockhash(block.number),
                     block.timestamp,
                     block.difficulty,
@@ -79,43 +77,35 @@ contract GluwaPrizeDraw is Initializable, Context {
         return random;
     }
 
-    function findMaxMinForDraw(uint256 drawTimeStamp)
+    function findMinMaxForDraw(uint256 drawTimeStamp)
         public
         view
-        returns (uint256 max, uint256 min)
+        returns (uint256 min, uint256 max)
     {
-        address[] storage participants = _drawParticipant[drawTimeStamp];
-        max = _tickets[_drawParticipantTicket[drawTimeStamp][participants[0]]]
-            .upper;
-        min = _tickets[_drawParticipantTicket[drawTimeStamp][participants[0]]]
-            .lower;
-        for (uint256 i = 1; i < participants.length; i++) {
+        uint256[] storage drawTickets = _drawTicketMapping[drawTimeStamp];
+        max = _tickets[drawTickets[0]].upper;
+        min = _tickets[drawTickets[0]].lower;
+        for (uint256 i = 1; i < drawTickets.length; i++) {
             if (
-                _tickets[_drawParticipantTicket[drawTimeStamp][participants[i]]]
-                    .upper > max
+                _tickets[drawTickets[i]].upper > max
             ) {
-                max = _tickets[
-                    _drawParticipantTicket[drawTimeStamp][participants[i]]
-                ].upper;
+                max = _tickets[drawTickets[i]].upper;
             }
             if (
-                _tickets[_drawParticipantTicket[drawTimeStamp][participants[i]]]
-                    .lower < min
+                _tickets[drawTickets[i]].lower < min
             ) {
-                min = _tickets[
-                    _drawParticipantTicket[drawTimeStamp][participants[i]]
-                ].lower;
+                min = _tickets[drawTickets[i]].lower;
             }
         }
     }
 
-    function _findDrawWinner(uint256 drawTimeStamp) internal returns (uint256) {
+    function _findDrawWinner(uint256 drawTimeStamp, bytes memory externalFactor) internal returns (uint256) {
         require(
             _drawWinner[drawTimeStamp] == 0,
             "GluwaPrizeDraw: the draw has been made"
         );
-        (uint256 min, uint256 max) = findMaxMinForDraw(drawTimeStamp);
-        _drawWinner[drawTimeStamp] = _randomNumber(min, max);
+        (uint256 min, uint256 max) = findMinMaxForDraw(drawTimeStamp);
+        _drawWinner[drawTimeStamp] = _randomNumber(min, max, externalFactor);
         return _drawWinner[drawTimeStamp];
     }
 
@@ -164,27 +154,6 @@ contract GluwaPrizeDraw is Initializable, Context {
                 _drawWinningParticipant[drawTimeStamp].push(participants[i]);
             }
         }
-    }
-
-    function _generateTicketNumber(
-        uint64 ticketId,
-        uint96 blockNumber,
-        address owner
-    ) internal view returns (uint256) {
-        return
-            uint256(
-                blockhash(blockNumber) ^
-                    _convertUintToByte(ticketId) ^
-                    bytes32(uint256(uint160(owner)) << 96)
-            );
-    }
-
-    function _convertUintToByte(uint256 val) internal pure returns (bytes32) {
-        bytes32 temp;
-        assembly {
-            mstore(add(temp, 32), val)
-        }
-        return temp;
     }
 
     function _getValidTicketId(address owner)
@@ -280,9 +249,10 @@ contract GluwaPrizeDraw is Initializable, Context {
                 ticketUpper
             );
         } else {
+            uint96 ticketId = _drawTicketIndex.nextIdx;
             uint256 identifier_ = uint256(owner_);
-            identifier_ |= uint256(_drawTicketIndex.nextIdx) << 160;
-            _tickets[_drawTicketIndex.nextIdx] = DrawTicketModel.DrawTicket({
+            identifier_ |= uint256(ticketId) << 160;
+            _tickets[ticketId] = DrawTicketModel.DrawTicket({
                 identifier: identifier_,
                 lower: ticketLower,
                 upper: ticketUpper
@@ -291,15 +261,15 @@ contract GluwaPrizeDraw is Initializable, Context {
             _drawParticipant[drawTimeStamp].push(owner_);
             _drawParticipantTicket[drawTimeStamp][owner_] = _drawTicketIndex
                 .nextIdx;
-            _drawTicketMapping[drawTimeStamp].add(_drawTicketIndex.nextIdx);
+            _drawTicketMapping[drawTimeStamp].add(ticketId);
             emit CreateTicket(
                 drawTimeStamp,
-                _drawTicketIndex.nextIdx,
+                ticketId,
                 owner_,
                 ticketLower,
                 ticketUpper
             );
-            _drawTicketIndex.set(_drawTicketIndex.nextIdx);
+            _drawTicketIndex.add();
         }
         return true;
     }
@@ -327,6 +297,14 @@ contract GluwaPrizeDraw is Initializable, Context {
     {
         owner = address(details);
         ticketId = uint96(details >> 160);
-        
+    }
+
+    function getDrawDetails(uint256 drawTimeStamp)
+        public
+        view
+        returns (address[] memory participants, uint256[] memory ticketIds)
+    {
+        participants = _drawParticipant[drawTimeStamp];
+        ticketIds = _drawTicketMapping[drawTimeStamp];
     }
 }

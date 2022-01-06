@@ -52,11 +52,27 @@ function getTimeFromTimestamp(timestamp) {
     return new Date(timestamp * 1000).toISOString().slice(-13, -5);
 }
 
+async function submitRawTxn(input, sender, ethers, provider){   
+    const txCount = await provider.getTransactionCount(sender.address);
+    var rawTx = {
+            nonce: ethers.utils.hexlify(txCount),
+            to: input.to,
+            value: 0x00,
+            gasLimit: ethers.utils.hexlify(1950000),
+            gasPrice: ethers.utils.hexlify(5000),
+            data: input.data
+            };
+    const rawTransactionHex = await sender.signTransaction(rawTx);
+    const { hash } = await provider.sendTransaction(rawTransactionHex);
+    return await provider.waitForTransaction(hash);
+}
+
 const TOTAL_SECONDS_PER_DAY = 86400;
 
 module.exports = {
     generateTicketForDraw, getBondAccountState,
     getBondAccountIdx, getBondAccountHashByIdx,
     getBondBalanceState, getTimeFromTimestamp,
+    submitRawTxn,
     TOTAL_SECONDS_PER_DAY
 }

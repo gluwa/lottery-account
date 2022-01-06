@@ -3,7 +3,6 @@ pragma solidity ^0.5.0;
 
 /** @title Simple hash map index library without status to be used by contracts within this ecosystem.*/
 library HashMapIndex {
-
     
     /**
      * @dev Efficient storage container for hashes enabling iteration
