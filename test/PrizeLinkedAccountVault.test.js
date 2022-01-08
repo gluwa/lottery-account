@@ -1,7 +1,8 @@
 const { expect, use } = require('chai');
 const { solidity } = require('ethereum-waffle');
 const testHelper = require('./shared');
-
+var chai = require('chai');
+chai.use(require('chai-bignumber')());
 use(solidity);
 
 const name = 'Gluwacoin';
@@ -35,7 +36,7 @@ var depositAmount = BigInt(200) * decimalsVal;
 var tokenPerTicket = 1;
 var ticketValidityTargetBlock = 20;
 var prizeLinkedAccountVault;
-var totalTicketPerBatch = 110;
+var processingCap = 110;
 var gluwaCoin;
 var gluwaCoin2;
 var convertAmount = 50;
@@ -72,7 +73,7 @@ describe('Gluwacoin', function () {
     gluwaCoinAddress = gluwaCoin.address;
     prizeLinkedAccountVaultAddress = prizeLinkedAccountVault.address;
     prizeLinkedAccountVault.initialize(ownerAddress, gluwaCoinAddress, standardInterestRate,
-      standardInterestRatePercentageBase, standardMaturityTerm, budget, tokenPerTicket, ticketValidityTargetBlock, totalTicketPerBatch, blockNumbeFactor, ticketRangeFactor);
+      standardInterestRatePercentageBase, standardMaturityTerm, budget, tokenPerTicket, ticketValidityTargetBlock, processingCap, blockNumbeFactor, ticketRangeFactor);
     gluwaCoin.mint(ownerAddress, mintAmount);
     gluwaCoin.mint(user1.address, mintAmount);
     gluwaCoin.mint(user2.address, mintAmount);
@@ -116,14 +117,14 @@ describe('Gluwacoin', function () {
       3: savingAccount_interestRate,
       4: savingAccount_interestRatePercentageBase,
       5: savingAccount_creationDate,
-      6: savingAccount_totalDeposit,
-      7: savingAccount_yield,
+      6: savingAccount_balance,
+      7: savingAccount_earning,
       8: savingAccount_state,
       9: savingAccount_securityReferenceHash } = (await prizeLinkedAccountVault.getSavingAcountFor(user1.address));
 
     expect(savingAccount_owner).to.equal(user1.address);
     expect(savingAccount_state).to.equal(ACCOUNT_ACTIVE_STAGE);
-    expect(savingAccount_totalDeposit).to.equal(depositAmount);
+    expect(savingAccount_balance).to.equal(depositAmount);
 
     var ticketEvent = receipt.events.filter(function (one) {
       return one.event == "CreateTicket";
@@ -155,7 +156,7 @@ describe('Gluwacoin', function () {
     const { 0: ticket_idx,
       1: ticket_owner,
       2: ticket_lower,
-      3: ticket_upper    } = (await prizeLinkedAccountVault.getTicketById(ticketId));
+      3: ticket_upper    } = (await prizeLinkedAccountVault.getTicketRangeById(ticketId));
 
       expect(upper).to.equal(ticket_upper);
       expect(lower).to.equal(ticket_lower);
@@ -172,7 +173,7 @@ describe('Gluwacoin', function () {
     await prizeLinkedAccountVault.createPrizedLinkAccount(user2.address, depositAmount * BigInt(3), user2.address);
 
 
-    expect((await prizeLinkedAccountVault.getCurrentTotalDeposit())).to.equal(depositAmount * BigInt(7));
+    expect((await prizeLinkedAccountVault.getCurrentbalance())).to.equal(depositAmount * BigInt(7));
   });
 
   it('multiple deposits into one account', async function () {
@@ -183,7 +184,7 @@ describe('Gluwacoin', function () {
     await prizeLinkedAccountVault.depositPrizedLinkAccount(user1.address, depositAmount * BigInt(2));
 
 
-    expect((await prizeLinkedAccountVault.getCurrentTotalDeposit())).to.equal(depositAmount * BigInt(9));
+    expect((await prizeLinkedAccountVault.getCurrentbalance())).to.equal(depositAmount * BigInt(9));
   });
 
   it('each address must have only one saving account', async function () {

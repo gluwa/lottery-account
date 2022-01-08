@@ -10,7 +10,7 @@ async function generateTicketForDraw(gluwaCoin, prizeLinkedAccountVault) {
 async function getBondAccountState(gluwaBondVault, account) {
     const { 0: bondAccount_idx,
         1: bondAccount_owner,
-        2: bondAccount_totalDeposit,
+        2: bondAccount_balance,
         3: bondAccount_creationDate,
         4: bondAccount_state,
         5: bondAccount_securityReferenceHash } = (await gluwaBondVault.getBondAcountFor(account));
@@ -20,7 +20,7 @@ async function getBondAccountState(gluwaBondVault, account) {
 async function getBondAccountIdx(gluwaBondVault, account) {
     const { 0: bondAccount_idx,
         1: bondAccount_owner,
-        2: bondAccount_totalDeposit,
+        2: bondAccount_balance,
         3: bondAccount_creationDate,
         4: bondAccount_state,
         5: bondAccount_securityReferenceHash } = (await gluwaBondVault.getBondAcountFor(account));
@@ -39,7 +39,7 @@ async function getBondBalanceState(gluwaBondVault, bondBalanceHash) {
         2: bondBalance_owner,
         3: bondBalance_interestRate,
         4: bondBalance_interestRatePercentageBase,
-        5: bondBalance_yield,
+        5: bondBalance_earning,
         6: bondBalance_principal,
         7: bondBalance_creationDate,
         8: bondBalance_maturityDate,

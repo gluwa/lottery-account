@@ -33,12 +33,10 @@ library GluwaAccountModel {
         uint256 idx;
         bytes32 accountHash;
         // address of the Account owner
-        address owner;
-        uint32 interestRate;
-        uint32 interestRatePercentageBase;
+        address owner;        
         uint256 creationDate;
-        uint256 totalDeposit;
-        uint256 yield;
+        uint256 balance;
+        uint256 earning;
         // Different states a Account can be in
         AccountState state;
         bytes securityReferenceHash;

@@ -50,7 +50,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         uint256 deposit
     );
 
-    event WithdrawSavingAccount(address indexed owner, uint256 amount);
+    event Withdraw(address indexed owner, uint256 amount);
 
     function __GluwacoinSavingAccount_init_unchained(
         address tokenAddress,
@@ -82,9 +82,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         returns (
             uint256,
             bytes32,
-            address,
-            uint32,
-            uint32,
+            address,           
             uint256,
             uint256,
             uint256,
@@ -97,12 +95,10 @@ contract GluwacoinSavingAccount is Initializable, Context {
         return (
             SavingAccount.idx,
             SavingAccount.accountHash,
-            SavingAccount.owner,
-            SavingAccount.interestRate,
-            SavingAccount.interestRatePercentageBase,
+            SavingAccount.owner,         
             SavingAccount.creationDate,
-            SavingAccount.totalDeposit,
-            SavingAccount.yield,
+            SavingAccount.balance,
+            SavingAccount.earning,
             SavingAccount.state,
             SavingAccount.securityReferenceHash
         );
@@ -153,11 +149,9 @@ contract GluwacoinSavingAccount is Initializable, Context {
             idx: _savingAccountIndex.nextIdx,
             accountHash: accountHash_,
             owner: owner_,
-            totalDeposit: initialDeposit,
-            creationDate: startDate,
-            interestRate: _standardInterestRate,
-            interestRatePercentageBase: _standardInterestRatePercentageBase,
-            yield: 0,
+            balance: initialDeposit,
+            creationDate: startDate,            
+            earning: 0,
             state: GluwaAccountModel.AccountState.Active,
             securityReferenceHash: identityHash
         });
@@ -181,18 +175,18 @@ contract GluwacoinSavingAccount is Initializable, Context {
         return (accountHash_, depositHash);
     }
 
-    function _withdraw(address owner, uint256 amount) internal returns (bool) {
+    function _withdraw(address owner, uint256 amount) internal returns (uint256) {
         GluwaAccountModel.SavingAccount
             storage account = _addressSavingAccountMapping[owner];
         require(
-            account.totalDeposit >= amount,
+            account.balance >= amount,
             "GluwaSavingAccount: Withdrawal amount is higher than deposit"
         );
-        account.totalDeposit -= amount;
+        account.balance -= amount;
         _currentTotalContractDeposit -= amount;
         _token.transfer(owner, amount);
-        emit WithdrawSavingAccount(owner, amount);
-        return true;
+        emit Withdraw(owner, amount);
+        return account.balance;
     }
 
     function _deposit(
@@ -216,7 +210,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
             _token.transferFrom(owner, address(this), amount),
             "GluwaSavingAccount: Unable to send amount to deposit to a Saving Account"
         );
-        account.totalDeposit += amount;
+        account.balance += amount;
         _currentTotalContractDeposit += amount;
         _allTimeTotalContractDeposit += amount;
         bytes32 depositHash = GluwaAccountModel.generateDepositHash(
@@ -241,7 +235,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
     /**
      * @return the total amount of token put into the Saving contract.
      */
-    function getCurrentTotalDeposit() public view returns (uint256) {
+    function getCurrentbalance() public view returns (uint256) {
         return _currentTotalContractDeposit;
     }
 
@@ -274,9 +268,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         returns (
             uint256,
             bytes32,
-            address,
-            uint32,
-            uint32,
+            address,           
             uint256,
             uint256,
             uint256,
@@ -327,22 +319,22 @@ contract GluwacoinSavingAccount is Initializable, Context {
     }
 
     /**
-     * @dev calculate yield for given amount based on term and interest rate.
+     * @dev calculate earning for given amount based on term and interest rate.
             if interest rate is 15%, the interestRatePercentageBase is 100 and interestRate is 15
             if interest rate is 15.5%, the interestRatePercentageBase is 1000 and interestRate is 155
      */
-    function _calculateYield(
+    function _calculateearning(
         uint64 term,
         uint32 interestRate,
         uint32 interestRatePercentageBase,
         uint256 amount
     ) private pure returns (uint256) {
-        uint256 yield = amount
+        uint256 earning = amount
             .mul(interestRate)
             .div(interestRatePercentageBase)
             .mul(term)
             .div(31536000); /// @dev 365 days in seconds
-        return yield;
+        return earning;
     }
 
     function _validateSavingBalance(uint256 deposit) private view {

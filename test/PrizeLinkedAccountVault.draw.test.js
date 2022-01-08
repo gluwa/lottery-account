@@ -30,7 +30,7 @@ var depositAmount = BigInt(30000) * decimalsVal;
 var tokenPerTicket = 1;
 var ticketValidityTargetBlock = 20;
 var prizeLinkedAccountVault;
-var totalTicketPerBatch = 110;
+var processingCap = 110;
 var gluwaCoin;
 var gluwaCoin2;
 var convertAmount = 50;
@@ -67,7 +67,7 @@ describe('Gluwacoin', function () {
     gluwaCoinAddress = gluwaCoin.address;
     prizeLinkedAccountVaultAddress = prizeLinkedAccountVault.address;
     prizeLinkedAccountVault.initialize(ownerAddress, gluwaCoinAddress, standardInterestRate,
-      standardInterestRatePercentageBase, standardMaturityTerm, budget, tokenPerTicket, ticketValidityTargetBlock, totalTicketPerBatch, blockNumbeFactor, ticketRangeFactor);
+      standardInterestRatePercentageBase, standardMaturityTerm, budget, tokenPerTicket, ticketValidityTargetBlock, processingCap, blockNumbeFactor, ticketRangeFactor);
     gluwaCoin.mint(ownerAddress, mintAmount);
     gluwaCoin.mint(user1.address, mintAmount);
     gluwaCoin.mint(user2.address, mintAmount);
@@ -192,7 +192,7 @@ describe('Gluwacoin', function () {
       var { 0: ticket_idx,
         1: ticket_owner,
         2: ticket_lower,
-        3: ticket_upper } = (await prizeLinkedAccountVault.getTicketById(tickets[i]));
+        3: ticket_upper } = (await prizeLinkedAccountVault.getTicketRangeById(tickets[i]));
       expect(ticket_owner).to.equal(owners[i]);
       expect(ticket_idx).to.equal(tickets[i]);
     }
@@ -227,10 +227,10 @@ describe('Gluwacoin', function () {
     }
 
     var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
-    var winningticket = await prizeLinkedAccountVault.callStatic.findDrawWinnerV1(drawDate,0);
+    var winningticket = await prizeLinkedAccountVault.callStatic.makeDrawV1(drawDate,0);
 
-    expect(winningticket).to.be.bignumber.at.least(min);
     expect(winningticket).to.be.bignumber.at.most(max);
+    expect(winningticket).to.be.bignumber.at.least(min);
 
   });
 
@@ -264,10 +264,11 @@ describe('Gluwacoin', function () {
     const randomMax = 99999999;
     const randomMin = 10000000;
     var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
-    var winningticket = await prizeLinkedAccountVault.callStatic.findDrawWinnerV1(drawDate,Math.floor(Math.random() * (randomMax - randomMin0) + randomMin));
+    var winningticket = await prizeLinkedAccountVault.callStatic.makeDrawV1(drawDate,Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
 
-    expect(winningticket).to.be.bignumber.at.least(min);
     expect(winningticket).to.be.bignumber.at.most(max);
+    expect(winningticket).to.be.bignumber.at.least(min);
+
 
   });
 

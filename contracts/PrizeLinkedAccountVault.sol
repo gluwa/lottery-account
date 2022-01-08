@@ -3,6 +3,7 @@ pragma solidity ^0.5.0;
 import "./abstracts/VaultControl.sol";
 import "./abstracts/GluwacoinSavingAccount.sol";
 import "./abstracts/GluwaPrizeDraw.sol";
+import "./libs/DateTimeModel.sol";
 
 contract PrizeLinkedAccountVault is
     VaultControl,
@@ -10,10 +11,11 @@ contract PrizeLinkedAccountVault is
     GluwaPrizeDraw
 {
     event Winner(address winner, uint256 ticket, uint256 reward);
+    using DateTimeModel for DateTimeModel;
 
-    uint8 internal _blockNumberFactor; // 1st Factor to ensure the chance 2 userss tickets in a draw overlapping each other is very low
+    uint8 internal _tokenDecimal;
+    uint16 internal _tokenPerTicket;
     uint32 private _processingCap;
-    uint128 internal _ticketRangeFactor; // 2nd Factor to ensure the chance 2 userss tickets in a draw overlapping each other is very low
 
     function initialize(
         address admin,
@@ -23,9 +25,9 @@ contract PrizeLinkedAccountVault is
         uint64 standardMaturityTerm,
         uint256 budget,
         uint16 tokenPerTicket,
-        uint16 ticketValidityTargetBlock,
+        uint8 cutOffHour,
+        uint8 cutOffMinute,
         uint32 processingCap,
-        uint8 blockNumberFactor,
         uint128 ticketRangeFactor
     ) external initializer {
         __VaultControl_Init(admin);
@@ -37,16 +39,16 @@ contract PrizeLinkedAccountVault is
             budget
         );
         __GluwaPrizeDraw_init_unchained(
-            _token.decimals(),
-            tokenPerTicket,
-            ticketValidityTargetBlock
+            cutOffHour,
+            cutOffMinute,
+            ticketRangeFactor
         );
         _processingCap = processingCap;
-        _ticketRangeFactor = ticketRangeFactor;
-        _blockNumberFactor = blockNumberFactor;
+        _tokenDecimal = _token.decimals();
+        _tokenPerTicket = tokenPerTicket;
     }
 
-    function prizeDraw(uint256 drawTimeStamp)
+    function awardWinnerV1(uint256 drawTimeStamp)
         external
         onlyOperator
         returns (bool)
@@ -55,9 +57,9 @@ contract PrizeLinkedAccountVault is
             !_prizePayingStatus[drawTimeStamp],
             "GluwaPrizeDraw: Prize has been paid out"
         );
-        address[] storage winners = _drawWinningParticipant[drawTimeStamp];
+        address[] memory winners = getDrawWinner(drawTimeStamp);
         uint256 prize = (
-            _totalPrizeBroughForward.add(_totalDepositEachDraw[drawTimeStamp])
+            _totalPrizeBroughForward.add(_balanceEachDraw[drawTimeStamp])
         ).mul(_standardInterestRate).div(_standardInterestRatePercentageBase);
         _prizePayingStatus[drawTimeStamp] = true;
         if (winners.length > 0) {
@@ -71,7 +73,7 @@ contract PrizeLinkedAccountVault is
         return true;
     }
 
-    function findDrawWinnerV1(uint256 drawTimeStamp, uint256 seed)
+    function makeDrawV1(uint256 drawTimeStamp, uint256 seed)
         external
         onlyOperator
         returns (uint256)
@@ -79,12 +81,10 @@ contract PrizeLinkedAccountVault is
         bytes memory temp = new bytes(32);
         address sender = address(this);
         assembly {
-            mstore(add(temp, 32), xor(seed,sender))
+            mstore(add(temp, 32), xor(seed, sender))
         }
         return _findDrawWinner(drawTimeStamp, temp);
     }
-
-  
 
     function createPrizedLinkAccount(
         address owner,
@@ -128,16 +128,35 @@ contract PrizeLinkedAccountVault is
             deposit.creationDate > 0,
             "GluwaPrizeDraw: The deposit is not found"
         );
-        uint256 lower = _ticketRangeFactor +
-            block.number *
-            _blockNumberFactor +
-            _allTimeTotalContractDeposit;
+
         _createTicketForDeposit(
             deposit.owner,
             deposit.creationDate,
-            lower,
-            lower + _convertDepositToTotalTicket(deposit.amount)
+            _convertDepositToTotalTicket(deposit.amount)
         );
+        return true;
+    }
+
+    function withdrawFor(address owner, uint256 amount) external onlyOperator returns (bool) {
+        return _withdrawPrizedLinkAccount(owner, amount);
+    }
+
+    function withdraw(uint256 amount) external returns (bool) {
+        return _withdrawPrizedLinkAccount(_msgSender(), amount);
+    }
+
+    function _withdrawPrizedLinkAccount(address owner, uint256 amount)
+        internal
+        returns (bool)
+    {
+        uint256 newBalance = _withdraw(owner, amount);
+        uint256 newIssued = _convertDepositToTotalTicket(newBalance);
+        uint256 next2ndDraw = _calculateDrawTime(now);
+        uint256 nextDraw = next2ndDraw - 86400;
+        _createTicket(owner, next2ndDraw, newIssued);
+        if (_drawParticipantTicket[nextDraw][owner] > 0) {
+            _createTicket(owner, nextDraw, newIssued);
+        }
         return true;
     }
 
@@ -146,7 +165,7 @@ contract PrizeLinkedAccountVault is
         view
         returns (uint256)
     {
-        return (amount * _tokenPerTicket) / (10**uint256(_token.decimals()));
+        return (amount * _tokenPerTicket) / (10**uint256(_tokenDecimal));
     }
 
     function getEligibleAddressPendingAddedToDraw(uint256 drawTimeStamp)
@@ -158,7 +177,7 @@ contract PrizeLinkedAccountVault is
         for (uint256 i = 0; i < _owners.length; i++) {
             if (
                 _drawParticipantTicket[drawTimeStamp][_owners[i]] == 0 &&
-                _addressSavingAccountMapping[_owners[i]].totalDeposit > 0 &&
+                _addressSavingAccountMapping[_owners[i]].balance > 0 &&
                 _addressSavingAccountMapping[_owners[i]].state ==
                 GluwaAccountModel.AccountState.Active
             ) {
@@ -173,37 +192,25 @@ contract PrizeLinkedAccountVault is
         returns (uint256)
     {
         uint32 processed;
-        uint256 base = block.number *
-            _blockNumberFactor +
-            _allTimeTotalContractDeposit;
         for (uint256 i = 0; i < _owners.length; i++) {
             if (
                 _drawParticipantTicket[drawTimeStamp][_owners[i]] == 0 &&
-                _addressSavingAccountMapping[_owners[i]].totalDeposit > 0 &&
+                _addressSavingAccountMapping[_owners[i]].balance > 0 &&
                 _addressSavingAccountMapping[_owners[i]].state ==
                 GluwaAccountModel.AccountState.Active
             ) {
                 _createTicket(
                     _owners[i],
                     drawTimeStamp,
-                    _ticketRangeFactor * processed + base,
-                    _ticketRangeFactor *
-                        processed +
-                        base +
-                        _convertDepositToTotalTicket(
-                            _addressSavingAccountMapping[_owners[i]]
-                                .totalDeposit
-                        )
+                    _convertDepositToTotalTicket(
+                        _addressSavingAccountMapping[_owners[i]].balance
+                    )
                 );
                 processed++;
                 if (processed > _processingCap) break;
             }
         }
         return processed;
-    }
-
-    function getCurrentWinner() external view returns (uint256) {
-        return _currentWinner;
     }
 
     function getSavingAcountFor(address owner)
@@ -214,8 +221,6 @@ contract PrizeLinkedAccountVault is
             uint256,
             bytes32,
             address,
-            uint32,
-            uint32,
             uint256,
             uint256,
             uint256,
@@ -226,16 +231,7 @@ contract PrizeLinkedAccountVault is
         return _getSavingAccountFor(owner);
     }
 
-    function getValidTicketIdFor(address owner)
-        external
-        view
-        onlyOperator
-        returns (uint256[] memory)
-    {
-        return _getValidTicketId(owner);
-    }
-
-    function getTicketById(uint256 idx)
+    function getTicketRangeById(uint256 idx)
         external
         view
         returns (
