@@ -115,6 +115,7 @@ contract GluwaPrizeDraw is Initializable, Context {
             "GluwaPrizeDraw: the draw has not been made"
         );
         address[] storage participants = _drawParticipant[drawTimeStamp];
+        result = new address[](participants.length);
         uint64 j;
         for (uint256 i = 1; i < participants.length; i++) {
             if (
@@ -126,13 +127,15 @@ contract GluwaPrizeDraw is Initializable, Context {
                     .upper >=
                 _drawWinner[drawTimeStamp] &&
                 _tickets[_drawParticipantTicket[drawTimeStamp][participants[i]]]
-                    .lower >=
+                    .lower <=
                 _drawWinner[drawTimeStamp]
             ) {
                 result[j] = participants[i];
                 j++;
             }
         }
+        uint256 unusedSpace = participants.length - j;
+        assembly {mstore(result, sub (mload(result), unusedSpace))}
     }
 
     function _findWinner(uint256 drawTimeStamp) internal {
