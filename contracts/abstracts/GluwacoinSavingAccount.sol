@@ -126,12 +126,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
             _usedIdentityHash[identityHash] == false,
             "GluwaSavingAccount: Identity hash is already used"
         );
-
-        require(
-            _token.transferFrom(owner_, address(this), initialDeposit),
-            "GluwaSavingAccount: Unable to send amount to deposit to a Saving Account"
-        );
-
+      
         bytes32 accountHash_ = GluwaAccountModel.generateAccountHash(
             startDate,
             address(this),
@@ -205,11 +200,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
             account.creationDate > 0,
             "GluwaSavingAccount: Account not found"
         );
-
-        require(
-            _token.transferFrom(owner, address(this), amount),
-            "GluwaSavingAccount: Unable to send amount to deposit to a Saving Account"
-        );
+        
         account.balance += amount;
         _currentTotalContractDeposit += amount;
         _allTimeTotalContractDeposit += amount;

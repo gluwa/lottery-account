@@ -55,18 +55,16 @@ contract PrizeLinkedAccountVault is
     {
         require(
             !_prizePayingStatus[drawTimeStamp],
-            "GluwaPrizeDraw: Prize has been paid out"
+            "GluwaPrizeLinkedAccount: Prize has been paid out"
         );
-        address[] memory winners = getDrawWinner(drawTimeStamp);
+        address winner = getDrawWinner(drawTimeStamp);
         uint256 prize = (
             _totalPrizeBroughForward.add(_balanceEachDraw[drawTimeStamp])
         ).mul(_standardInterestRate).div(_standardInterestRatePercentageBase);
         _prizePayingStatus[drawTimeStamp] = true;
-        if (winners.length > 0) {
+        if (winner != address(0)) {
             _totalPrizeBroughForward = 0;
-            for (uint256 i = 0; i < winners.length; i++) {
-                return _depositPrizedLinkAccount(winners[i], prize);
-            }
+             _depositPrizedLinkAccount(winner, prize);
         } else {
             _totalPrizeBroughForward += prize;
         }
@@ -91,6 +89,10 @@ contract PrizeLinkedAccountVault is
         uint256 amount,
         bytes calldata securityHash
     ) external onlyOperator returns (bool) {
+        require(
+            _token.transferFrom(owner, address(this), amount),
+            "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
+        );
         (, bytes32 depositHash) = _createSavingAccount(
             owner,
             amount,
@@ -105,6 +107,10 @@ contract PrizeLinkedAccountVault is
         onlyOperator
         returns (bool)
     {
+        require(
+            _token.transferFrom(owner, address(this), amount),
+            "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
+        );
         return _depositPrizedLinkAccount(owner, amount);
     }
 
@@ -126,12 +132,13 @@ contract PrizeLinkedAccountVault is
         ];
         require(
             deposit.creationDate > 0,
-            "GluwaPrizeDraw: The deposit is not found"
+            "GluwaPrizeLinkedAccount: The deposit is not found"
         );
 
         _createTicketForDeposit(
             deposit.owner,
             deposit.creationDate,
+            deposit.amount,
             _convertDepositToTotalTicket(deposit.amount)
         );
         return true;
@@ -153,9 +160,9 @@ contract PrizeLinkedAccountVault is
         uint256 newIssued = _convertDepositToTotalTicket(newBalance);
         uint256 next2ndDraw = _calculateDrawTime(now);
         uint256 nextDraw = next2ndDraw - 86400;
-        _createTicket(owner, next2ndDraw, newIssued);
-        if (_drawParticipantTicket[nextDraw][owner] > 0) {
-            _createTicket(owner, nextDraw, newIssued);
+        _removeTicket(owner, next2ndDraw, amount, newIssued);
+        if (_drawParticipantTicket[nextDraw][owner].length > 0) {
+            _removeTicket(owner, nextDraw, amount, newIssued);
         }
         return true;
     }
@@ -176,7 +183,7 @@ contract PrizeLinkedAccountVault is
         uint256 t;
         for (uint256 i = 0; i < _owners.length; i++) {
             if (
-                _drawParticipantTicket[drawTimeStamp][_owners[i]] == 0 &&
+                _drawParticipantTicket[drawTimeStamp][_owners[i]].length == 0 &&
                 _addressSavingAccountMapping[_owners[i]].balance > 0 &&
                 _addressSavingAccountMapping[_owners[i]].state ==
                 GluwaAccountModel.AccountState.Active
@@ -194,7 +201,7 @@ contract PrizeLinkedAccountVault is
         uint32 processed;
         for (uint256 i = 0; i < _owners.length; i++) {
             if (
-                _drawParticipantTicket[drawTimeStamp][_owners[i]] == 0 &&
+                _drawParticipantTicket[drawTimeStamp][_owners[i]].length == 0 &&
                 _addressSavingAccountMapping[_owners[i]].balance > 0 &&
                 _addressSavingAccountMapping[_owners[i]].state ==
                 GluwaAccountModel.AccountState.Active
@@ -202,6 +209,7 @@ contract PrizeLinkedAccountVault is
                 _createTicket(
                     _owners[i],
                     drawTimeStamp,
+                    _addressSavingAccountMapping[_owners[i]].balance,
                     _convertDepositToTotalTicket(
                         _addressSavingAccountMapping[_owners[i]].balance
                     )
