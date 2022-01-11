@@ -13,7 +13,6 @@ contract GluwacoinSavingAccount is Initializable, Context {
     using SafeMath for uint256;
     using UintArrayUtil for uint256[];
 
-    uint64 private _standardMaturityTerm;
     uint256 private _budget;
     uint256 private _minimumDeposit;
     uint256 internal _totalNonMaturedSaving;
@@ -42,27 +41,25 @@ contract GluwacoinSavingAccount is Initializable, Context {
     mapping(bytes => bool) private _usedIdentityHash;
     //mapping(bytes32 => GluwaAccountModel.SavingAccount) internal _savingAccountStorage;
 
-    event CreateAccount(bytes32 indexed accountHash, address indexed owner);
+    event AccountCreated(bytes32 indexed accountHash, address indexed owner);
 
-    event CreateDeposit(
+    event DepositCreated(
         bytes32 indexed depositHash,
         address indexed owner,
         uint256 deposit
     );
 
-    event Withdraw(address indexed owner, uint256 amount);
+    event Withdrawn(address indexed owner, uint256 amount);
 
     function __GluwacoinSavingAccount_init_unchained(
         address tokenAddress,
         uint32 standardInterestRate,
         uint32 standardInterestRatePercentageBase,
-        uint64 standardMaturityTerm,
         uint256 budget
     ) internal initializer {
         _token = IERC20(tokenAddress);
         _standardInterestRate = standardInterestRate;
         _standardInterestRatePercentageBase = standardInterestRatePercentageBase;
-        _standardMaturityTerm = standardMaturityTerm;
         _budget = budget;
         _savingAccountIndex = HashMapIndex.HashMapping({
             firstIdx: 1,
@@ -164,8 +161,8 @@ contract GluwacoinSavingAccount is Initializable, Context {
         _owners.push(owner_);
         _currentTotalContractDeposit += initialDeposit;
         _allTimeTotalContractDeposit += initialDeposit;
-        emit CreateAccount(accountHash_, owner_);
-        emit CreateDeposit(depositHash, owner_, initialDeposit);
+        emit AccountCreated(accountHash_, owner_);
+        emit DepositCreated(depositHash, owner_, initialDeposit);
 
         return (accountHash_, depositHash);
     }
@@ -180,7 +177,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         account.balance -= amount;
         _currentTotalContractDeposit -= amount;
         _token.transfer(owner, amount);
-        emit Withdraw(owner, amount);
+        emit Withdrawn(owner, amount);
         return account.balance;
     }
 
@@ -219,7 +216,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         });
         _depositIndex.add(depositHash);
 
-        emit CreateDeposit(depositHash, owner, amount);
+        emit DepositCreated(depositHash, owner, amount);
         return depositHash;
     }
 
@@ -276,8 +273,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
     function getSavingSettings()
         public
         view
-        returns (
-            uint64,
+        returns (            
             uint32,
             uint32,
             uint256,
@@ -286,7 +282,6 @@ contract GluwacoinSavingAccount is Initializable, Context {
         )
     {
         return (
-            _standardMaturityTerm,
             _standardInterestRate,
             _standardInterestRatePercentageBase,
             _budget,
@@ -295,14 +290,12 @@ contract GluwacoinSavingAccount is Initializable, Context {
         );
     }
 
-    function _setSavingSettings(
-        uint64 standardMaturityTerm,
+    function _setAccountSavingSettings(
         uint32 standardInterestRate,
         uint32 standardInterestRatePercentageBase,
         uint256 budget,
         uint256 minimumDeposit
     ) internal {
-        _standardMaturityTerm = standardMaturityTerm;
         _standardInterestRate = standardInterestRate;
         _standardInterestRatePercentageBase = standardInterestRatePercentageBase;
         _budget = budget;
@@ -335,4 +328,6 @@ contract GluwacoinSavingAccount is Initializable, Context {
             "GluwacoinSaving: the deposit must be >= min deposit & cannot make the total balance > the investment cap."
         );
     }
+
+    uint256[50] private __gap;
 }

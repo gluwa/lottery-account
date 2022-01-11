@@ -31,12 +31,9 @@ contract GluwaPrizeDraw is Initializable, Context {
     mapping(uint256 => address[]) internal _drawParticipant;
     mapping(uint256 => uint256) internal _drawWinner;
     mapping(uint256 => uint256) internal _balanceEachDraw;
-    mapping(uint256 => address[]) internal _drawWinningParticipant;
     mapping(uint256 => bool) internal _prizePayingStatus;
 
-    event Winner(address winner, uint256 ticket, uint256 reward);
-
-    event CreateTicket(
+    event TicketCreated(
         uint256 indexed drawTimeStamp,
         uint256 indexed ticketId,
         address indexed owner,
@@ -49,6 +46,17 @@ contract GluwaPrizeDraw is Initializable, Context {
         uint8 cutOffMinute,
         uint128 ticketRangeFactor
     ) internal initializer {
+        _cutOffHour = cutOffHour;
+        _cutOffMinute = cutOffMinute;
+        _ticketRangeFactor = ticketRangeFactor;
+        _drawTicketIndex = SimpleIndex.Index({nextIdx: 1});
+    }
+
+    function _setGluwaPrizeDrawSettings(
+        uint8 cutOffHour,
+        uint8 cutOffMinute,
+        uint128 ticketRangeFactor
+    ) internal {
         _cutOffHour = cutOffHour;
         _cutOffMinute = cutOffMinute;
         _ticketRangeFactor = ticketRangeFactor;
@@ -215,7 +223,7 @@ contract GluwaPrizeDraw is Initializable, Context {
         );
         _drawTicketMapping[drawTimeStamp].push(ticketId);
         _drawTicketCurrentUpper[drawTimeStamp] = ticketUpper;
-        emit CreateTicket(
+        emit TicketCreated(
             drawTimeStamp,
             ticketId,
             owner_,
@@ -309,4 +317,6 @@ contract GluwaPrizeDraw is Initializable, Context {
         winningTicket = _drawWinner[drawTimeStamp];
         balanceEachDraw = _balanceEachDraw[drawTimeStamp];
     }
+
+    uint256[50] private __gap;
 }

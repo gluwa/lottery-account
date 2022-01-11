@@ -10,9 +10,12 @@ contract PrizeLinkedAccountVault is
     GluwacoinSavingAccount,
     GluwaPrizeDraw
 {
-    event Winner(address winner, uint256 ticket, uint256 reward);
+    event WinnerSelected(address winner, uint256 reward);
+    event Invested(address indexed recipient, uint256 amount);
+
     using DateTimeModel for DateTimeModel;
 
+    uint8 internal _lowerLimitPercentage;
     uint8 internal _tokenDecimal;
     uint16 internal _tokenPerTicket;
     uint32 private _processingCap;
@@ -22,20 +25,19 @@ contract PrizeLinkedAccountVault is
         address tokenAddress,
         uint32 standardInterestRate,
         uint32 standardInterestRatePercentageBase,
-        uint64 standardMaturityTerm,
         uint256 budget,
         uint16 tokenPerTicket,
         uint8 cutOffHour,
         uint8 cutOffMinute,
         uint32 processingCap,
-        uint128 ticketRangeFactor
+        uint128 ticketRangeFactor,
+        uint8 lowerLimitPercentage
     ) external initializer {
         __VaultControl_Init(admin);
         __GluwacoinSavingAccount_init_unchained(
             tokenAddress,
             standardInterestRate,
             standardInterestRatePercentageBase,
-            standardMaturityTerm,
             budget
         );
         __GluwaPrizeDraw_init_unchained(
@@ -46,6 +48,7 @@ contract PrizeLinkedAccountVault is
         _processingCap = processingCap;
         _tokenDecimal = _token.decimals();
         _tokenPerTicket = tokenPerTicket;
+        _lowerLimitPercentage = lowerLimitPercentage;
     }
 
     function awardWinnerV1(uint256 drawTimeStamp)
@@ -64,10 +67,11 @@ contract PrizeLinkedAccountVault is
         _prizePayingStatus[drawTimeStamp] = true;
         if (winner != address(0)) {
             _totalPrizeBroughForward = 0;
-             _depositPrizedLinkAccount(winner, prize);
+            _depositPrizedLinkAccount(winner, prize);
         } else {
             _totalPrizeBroughForward += prize;
         }
+        emit WinnerSelected(winner, prize);
         return true;
     }
 
@@ -144,7 +148,11 @@ contract PrizeLinkedAccountVault is
         return true;
     }
 
-    function withdrawFor(address owner, uint256 amount) external onlyOperator returns (bool) {
+    function withdrawFor(address owner, uint256 amount)
+        external
+        onlyOperator
+        returns (bool)
+    {
         return _withdrawPrizedLinkAccount(owner, amount);
     }
 
@@ -221,6 +229,50 @@ contract PrizeLinkedAccountVault is
         return processed;
     }
 
+    function invest(address recipient, uint256 amount)
+        external
+        onlyOperator
+        returns (bool)
+    {
+        require(
+            recipient != address(0),
+            "GluwaPrizeLinkedAccount: Recipient address for investment must be defined"
+        );
+        uint256 totalBalance = _token.balanceOf(address(this));
+        require(
+            totalBalance - amount >=
+                totalBalance.mul(_lowerLimitPercentage).div(100),
+            "GluwaPrizeLinkedAccount: the investment amount will make the total balance lower than the bottom threshold."
+        );
+        _token.transfer(recipient, amount);
+        emit Invested(recipient, amount);
+        return true;
+    }
+
+    function setPrizeLinkedAccountSettings(
+        uint32 standardInterestRate,
+        uint32 standardInterestRatePercentageBase,
+        uint256 budget,
+        uint256 minimumDeposit,
+        uint16 tokenPerTicket,
+        uint8 cutOffHour,
+        uint8 cutOffMinute,
+        uint32 processingCap,
+        uint128 ticketRangeFactor,
+        uint8 lowerLimitPercentage
+    ) external onlyOperator {
+        _tokenPerTicket = tokenPerTicket;
+        _processingCap = processingCap;
+        _lowerLimitPercentage = lowerLimitPercentage;
+        _setAccountSavingSettings(
+            standardInterestRate,
+            standardInterestRatePercentageBase,
+            budget,
+            minimumDeposit
+        );
+        _setGluwaPrizeDrawSettings(cutOffHour, cutOffMinute, ticketRangeFactor);
+    }
+
     function getSavingAcountFor(address owner)
         external
         view
@@ -251,4 +303,6 @@ contract PrizeLinkedAccountVault is
     {
         return _getTicket(idx);
     }
+
+    uint256[50] private __gap;
 }

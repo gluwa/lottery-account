@@ -61,4 +61,6 @@ contract VaultControl is Initializable, Context, AccessControlUpgradeSafe {
     function renounceOperator() public {
         renounceRole(OPERATOR_ROLE, _msgSender());
     }
+
+    uint256[50] private __gap;
 }
