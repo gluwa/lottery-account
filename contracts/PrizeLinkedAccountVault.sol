@@ -51,6 +51,10 @@ contract PrizeLinkedAccountVault is
         _lowerLimitPercentage = lowerLimitPercentage;
     }
 
+    function getAmountBroughtToNextDraw() external view returns(uint256){
+        return _totalPrizeBroughForward;
+    }
+
     function awardWinnerV1(uint256 drawTimeStamp)
         external
         onlyOperator
@@ -67,7 +71,7 @@ contract PrizeLinkedAccountVault is
         _prizePayingStatus[drawTimeStamp] = true;
         if (winner != address(0)) {
             _totalPrizeBroughForward = 0;
-            _depositPrizedLinkAccount(winner, prize);
+            _depositPrizedLinkAccount(winner, prize, true);
         } else {
             _totalPrizeBroughForward += prize;
         }
@@ -115,14 +119,14 @@ contract PrizeLinkedAccountVault is
             _token.transferFrom(owner, address(this), amount),
             "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
         );
-        return _depositPrizedLinkAccount(owner, amount);
+        return _depositPrizedLinkAccount(owner, amount, false);
     }
 
-    function _depositPrizedLinkAccount(address owner, uint256 amount)
+    function _depositPrizedLinkAccount(address owner, uint256 amount, bool isEarning)
         internal
         returns (bool)
     {
-        bytes32 depositHash = _deposit(owner, amount, now);
+        bytes32 depositHash = _deposit(owner, amount, now, isEarning);
         return _createPrizedLinkTickets(depositHash);
     }
 

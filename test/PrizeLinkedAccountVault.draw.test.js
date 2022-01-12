@@ -8,7 +8,7 @@ use(solidity);
 const name = 'Gluwacoin';
 const symbol = 'Gluwacoin';
 const decimals = 18;
-const lowerLimitPercentage = 30; 
+const lowerLimitPercentage = 30;
 const standardInterestRate = 15;
 const standardInterestRatePercentageBase = 100;
 const cutOffHour = 16;
@@ -264,14 +264,14 @@ describe('Gluwacoin', function () {
     const randomMin = 10000000;
     var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
     var winningticket = await prizeLinkedAccountVault.callStatic.makeDrawV1(drawDate, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
-    
+
     expect(max - winningticket).to.be.greaterThanOrEqual(0);
     expect(winningticket - min).to.be.greaterThanOrEqual(0);
 
 
   });
 
-  it('verify winner', async function () {
+  it('verify winner account after drawing', async function () {
     var totalInDraw = 0;
     var drawDate = BigInt(0);
     for (var i = 0; i < 30; i++) {
@@ -292,7 +292,7 @@ describe('Gluwacoin', function () {
 
       var drawDateTemp = ticketEvent[0];
 
-    
+
       if (drawDate == BigInt(0)) {
         drawDate = drawDateTemp;
       }
@@ -302,14 +302,12 @@ describe('Gluwacoin', function () {
       totalInDraw++;
     }
     const randomMax = 99999999;
-    const randomMin = 10000000;    
+    const randomMin = 10000000;
     await prizeLinkedAccountVault.makeDrawV1(drawDate, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
 
     var { 0: owners, 1: tickets, 2: winningTicket, 3: balanceEachDraw } = await prizeLinkedAccountVault.getDrawDetails(drawDate);
-    console.info(winningTicket);
-    console.info(balanceEachDraw);;
+
     var winner = await prizeLinkedAccountVault.getDrawWinner(drawDate);
-    console.info(winner);
     var balance = await gluwaCoin.balanceOf(winner);
 
     const { 0: savingAccount_idx,
@@ -335,15 +333,67 @@ describe('Gluwacoin', function () {
       4: savingAccount_balance1,
       5: savingAccount_earning1,
       6: savingAccount_state1,
-      7: savingAccount_securityReferenceHash1 } = (await prizeLinkedAccountVault.getSavingAcountFor(winner));
+      7: savingAccount_securityReferenceHash1 } = (await prizeLinkedAccountVault.getSavingAcountFor(winner));  
 
-   
 
     expect(winner).to.equal(winnerEvent[0]);
     expect(earnt).to.equal(winnerEvent[1]);
-    expect(savingAccount_balance + earnt).to.equal(savingAccount_balance1); 
-    expect(balance).to.equal(await gluwaCoin.balanceOf(winner)); 
+    expect(savingAccount_earning1).to.equal(winnerEvent[1]);
+    var totalAfterWinning = BigInt(savingAccount_balance) + earnt;
+    expect(totalAfterWinning).to.equal(savingAccount_balance1);
+    expect(balance).to.equal(await gluwaCoin.balanceOf(winner));
+
+  });
+
+  it('verify brought balance if there is no winner', async function () {
+    var totalInDraw = 0;
+    var drawDate = BigInt(0);
+    for (var i = 0; i < 30; i++) {
+      var temp = await ethers.Wallet.createRandom();
+      await gluwaCoin.mint(temp.address, mintAmount);
+      await bank2.sendTransaction({
+        to: temp.address,
+        value: ethers.utils.parseEther("1")
+      });
+      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVaultAddress, depositAmount);
+      await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
+      var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, depositAmount, temp.address);
+      var receipt = await accountTxn.wait();
+
+      var ticketEvent = receipt.events.filter(function (one) {
+        return one.event == "TicketCreated";
+      })[0].args;
+
+      var drawDateTemp = ticketEvent[0];
+
+
+      if (drawDate == BigInt(0)) {
+        drawDate = drawDateTemp;
+      }
+      else if (drawDate < drawDateTemp) {
+        break;
+      }
+      totalInDraw++;
+    }
+    await prizeLinkedAccountVault.makeDrawV1_Dummy(drawDate, 999999999999999);
+
+    var { 0: owners, 1: tickets, 2: winningTicket, 3: balanceEachDraw } = await prizeLinkedAccountVault.getDrawDetails(drawDate);
+
+    var winner = await prizeLinkedAccountVault.getDrawWinner(drawDate);
+
+    console.info(winner);
    
+    var winnerTxn = await prizeLinkedAccountVault.awardWinnerV1(drawDate);
+    var receiptWinner = await winnerTxn.wait();
+    var winnerEvent = receiptWinner.events.filter(function (one) {
+      return one.event == "WinnerSelected";
+    })[0].args;
+    var earnt = BigInt(balanceEachDraw) * BigInt(standardInterestRate) / BigInt(standardInterestRatePercentageBase);
+
+    expect(winner).to.equal(winnerEvent[0]);
+    expect(earnt).to.equal(winnerEvent[1]);
+    expect(earnt).to.equal(await prizeLinkedAccountVault.getAmountBroughtToNextDraw());
+
   });
 
 

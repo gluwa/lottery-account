@@ -4,7 +4,13 @@ import "../PrizeLinkedAccountVault.sol";
 
 contract SandboxPrizeLinkedAccountVault is PrizeLinkedAccountVault {   
 
-    function test(address owner) external pure returns (uint256, uint256) {
-        return (uint256(uint160(owner)), uint256(uint160(owner)) << 96);
+    function makeDrawV1_Dummy(uint256 drawTimeStamp, uint256 seed)
+        external
+        onlyOperator
+        returns (uint256)
+    {
+         _drawWinner[drawTimeStamp] = seed;
+        return seed;
     }
+
 }

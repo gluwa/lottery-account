@@ -29,7 +29,6 @@ contract GluwacoinSavingAccount is Initializable, Context {
      */
     uint32 internal _standardInterestRatePercentageBase;
     /// @dev The total amount users deposit to this Saving contract minus the withdrawn principal
-    uint256 internal _currentTotalContractDeposit;
     uint256 internal _allTimeTotalContractDeposit;
 
     /// @dev The supported token which can be deposited to a Saving account.
@@ -106,11 +105,8 @@ contract GluwacoinSavingAccount is Initializable, Context {
         uint256 initialDeposit,
         uint256 startDate,
         bytes memory identityHash
-    ) internal returns (bytes32, bytes32) {
-        require(
-            _allTimeTotalContractDeposit + initialDeposit <= _budget,
-            "GluwaSavingAccount: Budget is exceeded"
-        );
+    ) internal returns (bytes32, bytes32) {        
+        _validateSavingBalance(initialDeposit);
         require(
             owner_ != address(0),
             "GluwaSavingAccount: Saving owner address must be defined"
@@ -159,7 +155,6 @@ contract GluwacoinSavingAccount is Initializable, Context {
         _savingAccountIndex.add(accountHash_);
         _depositIndex.add(depositHash);
         _owners.push(owner_);
-        _currentTotalContractDeposit += initialDeposit;
         _allTimeTotalContractDeposit += initialDeposit;
         emit AccountCreated(accountHash_, owner_);
         emit DepositCreated(depositHash, owner_, initialDeposit);
@@ -175,7 +170,6 @@ contract GluwacoinSavingAccount is Initializable, Context {
             "GluwaSavingAccount: Withdrawal amount is higher than deposit"
         );
         account.balance -= amount;
-        _currentTotalContractDeposit -= amount;
         _token.transfer(owner, amount);
         emit Withdrawn(owner, amount);
         return account.balance;
@@ -184,7 +178,8 @@ contract GluwacoinSavingAccount is Initializable, Context {
     function _deposit(
         address owner,
         uint256 amount,
-        uint256 dateTime
+        uint256 dateTime,
+        bool isEarning
     ) internal returns (bytes32) {
         require(
             _allTimeTotalContractDeposit + amount <= _budget,
@@ -199,7 +194,10 @@ contract GluwacoinSavingAccount is Initializable, Context {
         );
         
         account.balance += amount;
-        _currentTotalContractDeposit += amount;
+        if (isEarning)
+        {
+            account.earning += amount;
+        }
         _allTimeTotalContractDeposit += amount;
         bytes32 depositHash = GluwaAccountModel.generateDepositHash(
             account.idx,
@@ -218,13 +216,6 @@ contract GluwacoinSavingAccount is Initializable, Context {
 
         emit DepositCreated(depositHash, owner, amount);
         return depositHash;
-    }
-
-    /**
-     * @return the total amount of token put into the Saving contract.
-     */
-    function getCurrentbalance() public view returns (uint256) {
-        return _currentTotalContractDeposit;
     }
 
     function getDeposit(bytes32 depositHash)
@@ -321,10 +312,10 @@ contract GluwacoinSavingAccount is Initializable, Context {
         return earning;
     }
 
-    function _validateSavingBalance(uint256 deposit) private view {
+    function _validateSavingBalance(uint256 deposit) private view {        
         require(
             deposit >= _minimumDeposit &&
-                deposit.add(_currentTotalContractDeposit) <= _budget,
+                deposit.add(_allTimeTotalContractDeposit) <= _budget,
             "GluwacoinSaving: the deposit must be >= min deposit & cannot make the total balance > the investment cap."
         );
     }
