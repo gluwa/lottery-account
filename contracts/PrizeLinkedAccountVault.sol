@@ -17,8 +17,8 @@ contract PrizeLinkedAccountVault is
 
     uint8 internal _lowerLimitPercentage;
     uint8 internal _tokenDecimal;
-    uint16 internal _ticketPerToken;
-    uint32 private _processingCap;
+    uint16 private _processingCap;
+    uint64 private _ticketPerToken;
 
     function initialize(
         address admin,
@@ -26,10 +26,10 @@ contract PrizeLinkedAccountVault is
         uint32 standardInterestRate,
         uint32 standardInterestRatePercentageBase,
         uint256 budget,
-        uint16 ticketPerToken,
+        uint64 ticketPerToken,
         uint8 cutOffHour,
         uint8 cutOffMinute,
-        uint32 processingCap,
+        uint16 processingCap,
         uint128 ticketRangeFactor,
         uint8 lowerLimitPercentage
     ) external initializer {
@@ -274,10 +274,10 @@ contract PrizeLinkedAccountVault is
         uint32 standardInterestRatePercentageBase,
         uint256 budget,
         uint256 minimumDeposit,
-        uint16 ticketPerToken,
+        uint64 ticketPerToken,
         uint8 cutOffHour,
         uint8 cutOffMinute,
-        uint32 processingCap,
+        uint16 processingCap,
         uint128 ticketRangeFactor,
         uint8 lowerLimitPercentage
     ) external onlyOperator {
@@ -302,10 +302,10 @@ contract PrizeLinkedAccountVault is
             uint256 budget,
             uint256 minimumDeposit,
             IERC20 token,
-            uint16 ticketPerToken,
+            uint64 ticketPerToken,
             uint8 cutOffHour,
             uint8 cutOffMinute,
-            uint32 processingCap,
+            uint16 processingCap,
             uint128 ticketRangeFactor,
             uint8 lowerLimitPercentage
         )
