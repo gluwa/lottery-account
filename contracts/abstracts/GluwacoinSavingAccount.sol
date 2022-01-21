@@ -48,7 +48,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         uint256 deposit
     );
 
-    event Withdrawn(address indexed owner, uint256 amount);
+    event Withdrawn(address indexed owner, address indexed recipient, uint256 amount);
 
     function __GluwacoinSavingAccount_init_unchained(
         address tokenAddress,
@@ -60,6 +60,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         _standardInterestRate = standardInterestRate;
         _standardInterestRatePercentageBase = standardInterestRatePercentageBase;
         _budget = budget;
+        _minimumDeposit = 1;
         _savingAccountIndex = HashMapIndex.HashMapping({
             firstIdx: 1,
             nextIdx: 1,
@@ -78,7 +79,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         returns (
             uint256,
             bytes32,
-            address,           
+            address,
             uint256,
             uint256,
             uint256,
@@ -91,7 +92,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         return (
             SavingAccount.idx,
             SavingAccount.accountHash,
-            SavingAccount.owner,         
+            SavingAccount.owner,
             SavingAccount.creationDate,
             SavingAccount.balance,
             SavingAccount.earning,
@@ -105,7 +106,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         uint256 initialDeposit,
         uint256 startDate,
         bytes memory identityHash
-    ) internal returns (bytes32, bytes32) {        
+    ) internal returns (bytes32, bytes32) {
         _validateSavingBalance(initialDeposit);
         require(
             owner_ != address(0),
@@ -119,7 +120,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
             _usedIdentityHash[identityHash] == false,
             "GluwaSavingAccount: Identity hash is already used"
         );
-      
+
         bytes32 accountHash_ = GluwaAccountModel.generateAccountHash(
             startDate,
             address(this),
@@ -138,7 +139,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
             accountHash: accountHash_,
             owner: owner_,
             balance: initialDeposit,
-            creationDate: startDate,            
+            creationDate: startDate,
             earning: 0,
             state: GluwaAccountModel.AccountState.Active,
             securityReferenceHash: identityHash
@@ -162,7 +163,10 @@ contract GluwacoinSavingAccount is Initializable, Context {
         return (accountHash_, depositHash);
     }
 
-    function _withdraw(address owner, uint256 amount) internal returns (uint256) {
+    function _withdraw(address owner, address recipient, uint256 amount)
+        internal
+        returns (uint256)
+    {
         GluwaAccountModel.SavingAccount
             storage account = _addressSavingAccountMapping[owner];
         require(
@@ -170,8 +174,8 @@ contract GluwacoinSavingAccount is Initializable, Context {
             "GluwaSavingAccount: Withdrawal amount is higher than deposit"
         );
         account.balance -= amount;
-        _token.transfer(owner, amount);
-        emit Withdrawn(owner, amount);
+        _token.transfer(recipient, amount);
+        emit Withdrawn(owner, recipient, amount);
         return account.balance;
     }
 
@@ -181,10 +185,8 @@ contract GluwacoinSavingAccount is Initializable, Context {
         uint256 dateTime,
         bool isEarning
     ) internal returns (bytes32) {
-        require(
-            _allTimeTotalContractDeposit + amount <= _budget,
-            "GluwaSavingAccount: Budget is exceeded"
-        );
+        _validateSavingBalance(amount);
+
         GluwaAccountModel.SavingAccount
             storage account = _addressSavingAccountMapping[owner];
 
@@ -192,10 +194,9 @@ contract GluwacoinSavingAccount is Initializable, Context {
             account.creationDate > 0,
             "GluwaSavingAccount: Account not found"
         );
-        
+
         account.balance += amount;
-        if (isEarning)
-        {
+        if (isEarning) {
             account.earning += amount;
         }
         _allTimeTotalContractDeposit += amount;
@@ -247,7 +248,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
         returns (
             uint256,
             bytes32,
-            address,           
+            address,
             uint256,
             uint256,
             uint256,
@@ -264,7 +265,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
     function getSavingSettings()
         public
         view
-        returns (            
+        returns (
             uint32,
             uint32,
             uint256,
@@ -312,11 +313,11 @@ contract GluwacoinSavingAccount is Initializable, Context {
         return earning;
     }
 
-    function _validateSavingBalance(uint256 deposit) private view {        
+    function _validateSavingBalance(uint256 deposit) private view {
         require(
             deposit >= _minimumDeposit &&
                 deposit.add(_allTimeTotalContractDeposit) <= _budget,
-            "GluwacoinSaving: the deposit must be >= min deposit & cannot make the total balance > the investment cap."
+            "GluwacoinSaving: the deposit must be >= min deposit & cannot make the total balance > the budget."
         );
     }
 

@@ -17,7 +17,7 @@ contract PrizeLinkedAccountVault is
 
     uint8 internal _lowerLimitPercentage;
     uint8 internal _tokenDecimal;
-    uint16 internal _tokenPerTicket;
+    uint16 internal _ticketPerToken;
     uint32 private _processingCap;
 
     function initialize(
@@ -26,7 +26,7 @@ contract PrizeLinkedAccountVault is
         uint32 standardInterestRate,
         uint32 standardInterestRatePercentageBase,
         uint256 budget,
-        uint16 tokenPerTicket,
+        uint16 ticketPerToken,
         uint8 cutOffHour,
         uint8 cutOffMinute,
         uint32 processingCap,
@@ -47,12 +47,8 @@ contract PrizeLinkedAccountVault is
         );
         _processingCap = processingCap;
         _tokenDecimal = _token.decimals();
-        _tokenPerTicket = tokenPerTicket;
+        _ticketPerToken = ticketPerToken;
         _lowerLimitPercentage = lowerLimitPercentage;
-    }
-
-    function getAmountBroughtToNextDraw() external view returns(uint256){
-        return _totalPrizeBroughForward;
     }
 
     function awardWinnerV1(uint256 drawTimeStamp)
@@ -71,7 +67,7 @@ contract PrizeLinkedAccountVault is
         _prizePayingStatus[drawTimeStamp] = true;
         if (winner != address(0)) {
             _totalPrizeBroughForward = 0;
-            _depositPrizedLinkAccount(winner, prize, true);
+            _depositPrizedLinkAccount(winner, prize, now, true);
         } else {
             _totalPrizeBroughForward += prize;
         }
@@ -84,6 +80,10 @@ contract PrizeLinkedAccountVault is
         onlyOperator
         returns (uint256)
     {
+        require(
+            drawTimeStamp <= now,
+            "GluwaPrizeLinkedAccount: The draw can only be made on or after the draw date time"
+        );
         bytes memory temp = new bytes(32);
         address sender = address(this);
         assembly {
@@ -119,14 +119,16 @@ contract PrizeLinkedAccountVault is
             _token.transferFrom(owner, address(this), amount),
             "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
         );
-        return _depositPrizedLinkAccount(owner, amount, false);
+        return _depositPrizedLinkAccount(owner, amount, now, false);
     }
 
-    function _depositPrizedLinkAccount(address owner, uint256 amount, bool isEarning)
-        internal
-        returns (bool)
-    {
-        bytes32 depositHash = _deposit(owner, amount, now, isEarning);
+    function _depositPrizedLinkAccount(
+        address owner,
+        uint256 amount,
+        uint256 dateTime,
+        bool isEarning
+    ) internal returns (bool) {
+        bytes32 depositHash = _deposit(owner, amount, dateTime, isEarning);
         return _createPrizedLinkTickets(depositHash);
     }
 
@@ -157,18 +159,32 @@ contract PrizeLinkedAccountVault is
         onlyOperator
         returns (bool)
     {
-        return _withdrawPrizedLinkAccount(owner, amount);
+        return _withdrawPrizedLinkAccount(owner, owner, amount);
     }
 
     function withdraw(uint256 amount) external returns (bool) {
-        return _withdrawPrizedLinkAccount(_msgSender(), amount);
+        return _withdrawPrizedLinkAccount(_msgSender(), _msgSender(), amount);
     }
 
-    function _withdrawPrizedLinkAccount(address owner, uint256 amount)
-        internal
+    function withdrawUnclaimedAccount(address owner, address recipient)
+        external
+        onlyAdmin
         returns (bool)
     {
-        uint256 newBalance = _withdraw(owner, amount);
+        return
+            _withdrawPrizedLinkAccount(
+                owner,
+                recipient,
+                _addressSavingAccountMapping[owner].balance
+            );
+    }
+
+    function _withdrawPrizedLinkAccount(
+        address owner,
+        address recipient,
+        uint256 amount
+    ) internal returns (bool) {
+        uint256 newBalance = _withdraw(owner, recipient, amount);
         uint256 newIssued = _convertDepositToTotalTicket(newBalance);
         uint256 next2ndDraw = _calculateDrawTime(now);
         uint256 nextDraw = next2ndDraw - 86400;
@@ -184,7 +200,7 @@ contract PrizeLinkedAccountVault is
         view
         returns (uint256)
     {
-        return (amount * _tokenPerTicket) / (10**uint256(_tokenDecimal));
+        return (amount * _ticketPerToken) / (10**uint256(_tokenDecimal));
     }
 
     function getEligibleAddressPendingAddedToDraw(uint256 drawTimeStamp)
@@ -258,14 +274,14 @@ contract PrizeLinkedAccountVault is
         uint32 standardInterestRatePercentageBase,
         uint256 budget,
         uint256 minimumDeposit,
-        uint16 tokenPerTicket,
+        uint16 ticketPerToken,
         uint8 cutOffHour,
         uint8 cutOffMinute,
         uint32 processingCap,
         uint128 ticketRangeFactor,
         uint8 lowerLimitPercentage
     ) external onlyOperator {
-        _tokenPerTicket = tokenPerTicket;
+        _ticketPerToken = ticketPerToken;
         _processingCap = processingCap;
         _lowerLimitPercentage = lowerLimitPercentage;
         _setAccountSavingSettings(
@@ -275,6 +291,41 @@ contract PrizeLinkedAccountVault is
             minimumDeposit
         );
         _setGluwaPrizeDrawSettings(cutOffHour, cutOffMinute, ticketRangeFactor);
+    }
+
+    function getPrizeLinkedAccountSettings()
+        external
+        view
+        returns (
+            uint32 standardInterestRate,
+            uint32 standardInterestRatePercentageBase,
+            uint256 budget,
+            uint256 minimumDeposit,
+            IERC20 token,
+            uint16 ticketPerToken,
+            uint8 cutOffHour,
+            uint8 cutOffMinute,
+            uint32 processingCap,
+            uint128 ticketRangeFactor,
+            uint8 lowerLimitPercentage
+        )
+    {
+        ticketPerToken = _ticketPerToken;
+        processingCap = _processingCap;
+        lowerLimitPercentage = _lowerLimitPercentage;
+        (
+            standardInterestRate,
+            standardInterestRatePercentageBase,
+            budget,
+            minimumDeposit,
+            token
+        ) = getSavingSettings();
+
+        (
+            cutOffHour,
+            cutOffMinute,
+            ticketRangeFactor
+        ) = _getGluwaPrizeDrawSettings();
     }
 
     function getSavingAcountFor(address owner)
@@ -306,6 +357,23 @@ contract PrizeLinkedAccountVault is
         )
     {
         return _getTicket(idx);
+    }
+
+    function getTickerIdsByOwnerAndDraw(uint256 drawTimeStamp)
+        external
+        view
+        returns (uint96[] memory)
+    {
+        return _getTickerIdsByOwnerAndDraw(drawTimeStamp, _msgSender());
+    }
+
+    function getTickerIdsByOwnerAndDrawFor(uint256 drawTimeStamp, address owner)
+        external
+        view
+        onlyOperator
+        returns (uint96[] memory)
+    {
+        return _getTickerIdsByOwnerAndDraw(drawTimeStamp, owner);
     }
 
     uint256[50] private __gap;

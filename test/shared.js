@@ -7,45 +7,68 @@ async function generateTicketForDraw(gluwaCoin, prizeLinkedAccountVault) {
     return bondSettings_minimumDeposit;
 }
 
-async function getBondAccountState(gluwaBondVault, account) {
-    const { 0: bondAccount_idx,
-        1: bondAccount_owner,
-        2: bondAccount_balance,
-        3: bondAccount_creationDate,
-        4: bondAccount_state,
-        5: bondAccount_securityReferenceHash } = (await gluwaBondVault.getBondAcountFor(account));
-    return bondAccount_state;
+
+async function setupContractTesting(owner, user1, user2, mintAmount, depositAmount) {
+    this.GluwaAccountModel = await ethers.getContractFactory("GluwaAccountModel");
+    this.DateTimeModel = await ethers.getContractFactory("DateTimeModel");
+    var GluwaAccountModel = await this.GluwaAccountModel.deploy();
+    var DateTimeModel = await this.DateTimeModel.deploy();
+    await DateTimeModel.deployed();
+    await GluwaAccountModel.deployed();
+    this.Gluwacoin = await ethers.getContractFactory("SandboxGluwacoin");
+    this.Gluwacoin2 = await ethers.getContractFactory("SandboxGluwacoin");
+    this.PrizeLinkedAccountVault = await ethers.getContractFactory("SandboxPrizeLinkedAccountVault", {
+      libraries: {
+        GluwaAccountModel: GluwaAccountModel.address,
+        DateTimeModel: DateTimeModel.address
+      },
+    });
+    gluwaCoin = await this.Gluwacoin.deploy(name, symbol, decimals);
+    gluwaCoin2 = await this.Gluwacoin2.deploy(name, symbol, decimals);
+    prizeLinkedAccountVault = await this.PrizeLinkedAccountVault.deploy();
+    await gluwaCoin.deployed();
+    await gluwaCoin2.deployed();
+    await prizeLinkedAccountVault.deployed();
+    gluwaCoinAddress = gluwaCoin.address;
+    prizeLinkedAccountVault.address = prizeLinkedAccountVault.address;
+    prizeLinkedAccountVault.initialize(owner.address, gluwaCoinAddress, standardInterestRate,
+      standardInterestRatePercentageBase, budget, ticketPerToken,
+      cutOffHour, cutOffMinute, processingCap, ticketRangeFactor, lowerLimitPercentage);
+    gluwaCoin.mint(owner.address, mintAmount);
+    gluwaCoin.mint(user1.address, mintAmount);
+    gluwaCoin.mint(user2.address, mintAmount);
+    await gluwaCoin.connect(user1).approve(prizeLinkedAccountVault.address, depositAmount);
+    await gluwaCoin.connect(user2).approve(prizeLinkedAccountVault.address, depositAmount);
+    return [prizeLinkedAccountVault, gluwaCoin, gluwaCoin2];
 }
 
-async function getBondAccountIdx(gluwaBondVault, account) {
-    const { 0: bondAccount_idx,
-        1: bondAccount_owner,
-        2: bondAccount_balance,
-        3: bondAccount_creationDate,
-        4: bondAccount_state,
-        5: bondAccount_securityReferenceHash } = (await gluwaBondVault.getBondAcountFor(account));
-    return bondAccount_idx;
+async function createPrizeLinkedAccountStandard(prizeLinkedAccountVault, address, depositAmount, identity)
+{
+    return await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,bytes)"](address, depositAmount, identity);
 }
 
-async function getBondAccountHashByIdx(gluwaBondVault, account) {
-    const bondAccount_idx = getBondAccountIdx(gluwaBondVault, account);
-    const bondHash = await gluwaBondVault.getBondAccountHashByIdx(bondAccount_idx);
-    return bondHash;
+async function createPrizeLinkedAccountSandBox(prizeLinkedAccountVault, address, depositAmount, depositTime, identity)
+{
+    return await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,uint256,bytes)"](address, depositAmount, depositTime, identity);
 }
 
-async function getBondBalanceState(gluwaBondVault, bondBalanceHash) {
-    const { 0: bondBalance_idx,
-        1: bondBalance_idxBondAccount,
-        2: bondBalance_owner,
-        3: bondBalance_interestRate,
-        4: bondBalance_interestRatePercentageBase,
-        5: bondBalance_earning,
-        6: bondBalance_principal,
-        7: bondBalance_creationDate,
-        8: bondBalance_maturityDate,
-        9: bondBalance_state } = (await gluwaBondVault.callStatic.getUserBondBalance(bondBalanceHash));
-    return bondBalance_state;
+async function depositPrizeLinkedAccountStandard(prizeLinkedAccountVault, address, depositAmount)
+{
+    return await prizeLinkedAccountVault["depositPrizedLinkAccount(address,uint256)"](address, depositAmount);
 }
+
+async function depositPrizeLinkedAccountSandBox(prizeLinkedAccountVault, address, depositAmount, depositTime)
+{
+    return await prizeLinkedAccountVault["depositPrizedLinkAccount(address,uint256,uint256)"](address, depositAmount, depositTime);
+}
+
+
+
+function getTimeFromTimestamp(timestamp) {
+    // return the time format as HH:mm:ss
+    return new Date(timestamp * 1000).toISOString().slice(-13, -5);
+}
+
 
 function getTimeFromTimestamp(timestamp) {
     // return the time format as HH:mm:ss
@@ -68,11 +91,30 @@ async function submitRawTxn(input, sender, ethers, provider){
 }
 
 const TOTAL_SECONDS_PER_DAY = 86400;
+const ACCOUNT_ACTIVE_STAGE = 1;
+
+const name = 'Gluwacoin';
+const symbol = 'Gluwacoin';
+const decimals = 18;
+const lowerLimitPercentage = 30;
+const standardInterestRate = 15;
+const standardInterestRatePercentageBase = 100;
+const cutOffHour = 16;
+const cutOffMinute = 59;
+const ticketRangeFactor = 100;
+const decimalsVal = BigInt(10) ** BigInt(decimals);
+const budget = BigInt(20000000000) * decimalsVal;
+const ticketPerToken = 1;
+const processingCap = 110;
+
 
 module.exports = {
-    generateTicketForDraw, getBondAccountState,
-    getBondAccountIdx, getBondAccountHashByIdx,
-    getBondBalanceState, getTimeFromTimestamp,
-    submitRawTxn,
-    TOTAL_SECONDS_PER_DAY
+    generateTicketForDraw, getTimeFromTimestamp,
+    submitRawTxn, setupContractTesting, createPrizeLinkedAccountStandard, createPrizeLinkedAccountSandBox,
+    depositPrizeLinkedAccountStandard, depositPrizeLinkedAccountSandBox,
+    TOTAL_SECONDS_PER_DAY, 
+    ACCOUNT_ACTIVE_STAGE,
+    name, symbol, decimals,
+    lowerLimitPercentage, standardInterestRate, standardInterestRatePercentageBase, cutOffHour, cutOffMinute, ticketRangeFactor,
+    decimalsVal, budget, ticketPerToken, processingCap
 }
