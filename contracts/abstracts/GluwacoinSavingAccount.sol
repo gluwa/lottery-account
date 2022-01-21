@@ -170,8 +170,8 @@ contract GluwacoinSavingAccount is Initializable, Context {
         GluwaAccountModel.SavingAccount
             storage account = _addressSavingAccountMapping[owner];
         require(
-            account.balance >= amount,
-            "GluwaSavingAccount: Withdrawal amount is higher than deposit"
+            account.balance >= amount && account.state == GluwaAccountModel.AccountState.Active,
+            "GluwaSavingAccount: Withdrawal amount is higher than deposit or the saving account must be active"
         );
         account.balance -= amount;
         _token.transfer(recipient, amount);
