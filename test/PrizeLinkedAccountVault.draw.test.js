@@ -5,32 +5,15 @@ var chai = require('chai');
 chai.use(require('chai-bignumber')());
 use(solidity);
 
-const name = 'Gluwacoin';
-const symbol = 'Gluwacoin';
-const decimals = 18;
-const lowerLimitPercentage = 30;
-const standardInterestRate = 15;
-const standardInterestRatePercentageBase = 100;
-const cutOffHour = 16;
-const cutOffMinute = 59;
-const ticketRangeFactor = 100;
-const decimalsVal = BigInt(10) ** BigInt(decimals);
-const budget = BigInt(20000000000) * decimalsVal;
-
-var ownerAddress;
 var owner;
 var user1;
 var user2;
 var user3;
 var bank1;
 var bank2;
-var gluwaCoinAddress;
-var prizeLinkedAccountVaultAddress;
-var mintAmount = BigInt(2000000) * decimalsVal;
-var depositAmount = BigInt(30000) * decimalsVal;
-var tokenPerTicket = 1;
+var mintAmount = BigInt(2000000) * testHelper.decimalsVal;
+var depositAmount = BigInt(30000) * testHelper.decimalsVal;
 var prizeLinkedAccountVault;
-var processingCap = 110;
 var gluwaCoin;
 var gluwaCoin2;
 
@@ -38,45 +21,12 @@ var gluwaCoin2;
 // Start test block
 describe('Gluwacoin', function () {
   before(async function () {
-    this.GluwaAccountModel = await ethers.getContractFactory("GluwaAccountModel");
-    this.DateTimeModel = await ethers.getContractFactory("DateTimeModel");
-    var GluwaAccountModel = await this.GluwaAccountModel.deploy();
-    var DateTimeModel = await this.DateTimeModel.deploy();
-    await DateTimeModel.deployed();
-    await GluwaAccountModel.deployed();
-    this.Gluwacoin = await ethers.getContractFactory("SandboxGluwacoin");
-    this.Gluwacoin2 = await ethers.getContractFactory("SandboxGluwacoin");
-    this.PrizeLinkedAccountVault = await ethers.getContractFactory("SandboxPrizeLinkedAccountVault", {
-      libraries: {
-        GluwaAccountModel: GluwaAccountModel.address,
-        DateTimeModel: DateTimeModel.address
-      },
-    });
     [owner, user1, bank1, bank2, user2, user3, lender] = await ethers.getSigners();
-    ownerAddress = owner.address;
   });
 
   beforeEach(async function () {
-    gluwaCoin = await this.Gluwacoin.deploy(name, symbol, decimals);
-    gluwaCoin2 = await this.Gluwacoin2.deploy(name, symbol, decimals);
-    prizeLinkedAccountVault = await this.PrizeLinkedAccountVault.deploy();
-    await gluwaCoin.deployed();
-    await gluwaCoin2.deployed();
-    await prizeLinkedAccountVault.deployed();
-    gluwaCoinAddress = gluwaCoin.address;
-    prizeLinkedAccountVaultAddress = prizeLinkedAccountVault.address;
-    prizeLinkedAccountVault.initialize(ownerAddress, gluwaCoinAddress, standardInterestRate,
-      standardInterestRatePercentageBase, budget, tokenPerTicket,
-      cutOffHour, cutOffMinute, processingCap, ticketRangeFactor, lowerLimitPercentage);
-    gluwaCoin.mint(ownerAddress, mintAmount);
-    gluwaCoin.mint(user1.address, mintAmount);
-    gluwaCoin.mint(user2.address, mintAmount);
-    await gluwaCoin.connect(user1).approve(prizeLinkedAccountVaultAddress, depositAmount);
-    await gluwaCoin.connect(user2).approve(prizeLinkedAccountVaultAddress, depositAmount);
+    [prizeLinkedAccountVault, gluwaCoin, gluwaCoin2] = await testHelper.setupContractTesting(owner, user1, user2, mintAmount, depositAmount);
   });
-
-
-
 
   it('check ticket allocation and participants', async function () {
     var totalInDraw = 0;
@@ -88,9 +38,9 @@ describe('Gluwacoin', function () {
         to: temp.address,
         value: ethers.utils.parseEther("1")
       });
-      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVaultAddress, depositAmount);
+      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
       await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
-      var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, depositAmount, temp.address);
+      var accountTxn = await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,bytes)"](temp.address, depositAmount, temp.address);
       var receipt = await accountTxn.wait();
 
       var ticketEvent = receipt.events.filter(function (one) {
@@ -128,9 +78,9 @@ describe('Gluwacoin', function () {
         to: temp.address,
         value: ethers.utils.parseEther("1")
       });
-      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVaultAddress, depositAmount);
+      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
       await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
-      var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, depositAmount, temp.address);
+      var accountTxn = await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,bytes)"](temp.address, depositAmount, temp.address);
       var receipt = await accountTxn.wait();
 
       var ticketEvent = receipt.events.filter(function (one) {
@@ -167,9 +117,9 @@ describe('Gluwacoin', function () {
         to: temp.address,
         value: ethers.utils.parseEther("1")
       });
-      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVaultAddress, depositAmount);
+      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
       await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
-      var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, depositAmount, temp.address);
+      var accountTxn = await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,bytes)"](temp.address, depositAmount, temp.address);
       var receipt = await accountTxn.wait();
 
       var ticketEvent = receipt.events.filter(function (one) {
@@ -207,9 +157,9 @@ describe('Gluwacoin', function () {
         to: temp.address,
         value: ethers.utils.parseEther("1")
       });
-      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVaultAddress, depositAmount);
+      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
       await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
-      var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, depositAmount, temp.address);
+      var accountTxn = await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,bytes)"](temp.address, depositAmount, temp.address);
       var receipt = await accountTxn.wait();
 
       var ticketEvent = receipt.events.filter(function (one) {
@@ -242,9 +192,9 @@ describe('Gluwacoin', function () {
         to: temp.address,
         value: ethers.utils.parseEther("1")
       });
-      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVaultAddress, depositAmount);
+      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
       await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
-      var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, depositAmount, temp.address);
+      var accountTxn = await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,bytes)"](temp.address, depositAmount, temp.address);
       var receipt = await accountTxn.wait();
 
       var ticketEvent = receipt.events.filter(function (one) {
@@ -281,9 +231,9 @@ describe('Gluwacoin', function () {
         to: temp.address,
         value: ethers.utils.parseEther("1")
       });
-      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVaultAddress, depositAmount);
+      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
       await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
-      var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, depositAmount, temp.address);
+      var accountTxn = await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,bytes)"](temp.address, depositAmount, temp.address);
       var receipt = await accountTxn.wait();
 
       var ticketEvent = receipt.events.filter(function (one) {
@@ -324,7 +274,7 @@ describe('Gluwacoin', function () {
     var winnerEvent = receiptWinner.events.filter(function (one) {
       return one.event == "WinnerSelected";
     })[0].args;
-    var earnt = BigInt(balanceEachDraw) * BigInt(standardInterestRate) / BigInt(standardInterestRatePercentageBase);
+    var earnt = BigInt(balanceEachDraw) * BigInt(testHelper.standardInterestRate) / BigInt(testHelper.standardInterestRatePercentageBase);
 
     const { 0: savingAccount_idx1,
       1: savingAccount_hash1,
@@ -333,7 +283,7 @@ describe('Gluwacoin', function () {
       4: savingAccount_balance1,
       5: savingAccount_earning1,
       6: savingAccount_state1,
-      7: savingAccount_securityReferenceHash1 } = (await prizeLinkedAccountVault.getSavingAcountFor(winner));  
+      7: savingAccount_securityReferenceHash1 } = (await prizeLinkedAccountVault.getSavingAcountFor(winner));
 
 
     expect(winner).to.equal(winnerEvent[0]);
@@ -355,9 +305,9 @@ describe('Gluwacoin', function () {
         to: temp.address,
         value: ethers.utils.parseEther("1")
       });
-      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVaultAddress, depositAmount);
+      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
       await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
-      var accountTxn = await prizeLinkedAccountVault.createPrizedLinkAccount(temp.address, depositAmount, temp.address);
+      var accountTxn = await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,bytes)"](temp.address, depositAmount, temp.address);
       var receipt = await accountTxn.wait();
 
       var ticketEvent = receipt.events.filter(function (one) {
@@ -381,14 +331,13 @@ describe('Gluwacoin', function () {
 
     var winner = await prizeLinkedAccountVault.getDrawWinner(drawDate);
 
-    console.info(winner);
-   
+
     var winnerTxn = await prizeLinkedAccountVault.awardWinnerV1(drawDate);
     var receiptWinner = await winnerTxn.wait();
     var winnerEvent = receiptWinner.events.filter(function (one) {
       return one.event == "WinnerSelected";
     })[0].args;
-    var earnt = BigInt(balanceEachDraw) * BigInt(standardInterestRate) / BigInt(standardInterestRatePercentageBase);
+    var earnt = BigInt(balanceEachDraw) * BigInt(testHelper.standardInterestRate) / BigInt(testHelper.standardInterestRatePercentageBase);
 
     expect(winner).to.equal(winnerEvent[0]);
     expect(earnt).to.equal(winnerEvent[1]);
@@ -396,6 +345,130 @@ describe('Gluwacoin', function () {
 
   });
 
+  it('verify brought balance will be used for the next draw', async function () {
+
+    await prizeLinkedAccountVault.setPrizeLinkedAccountSettings(
+      testHelper.standardInterestRate,
+      testHelper.standardInterestRatePercentageBase,
+      testHelper.budget,
+      1,
+      1,
+      testHelper.cutOffHour,
+      testHelper.cutOffMinute,
+      testHelper.processingCap,
+      1,
+      testHelper.lowerLimitPercentage
+    );
+    var drawDate1 = BigInt(0);
+    var depositTime1 = ((Date.now() / 1000) | 0) - testHelper.TOTAL_SECONDS_PER_DAY;
+    for (var i = 0; i < 10; i++) {
+      var temp = await ethers.Wallet.createRandom();
+      await gluwaCoin.mint(temp.address, mintAmount);
+      await bank2.sendTransaction({
+        to: temp.address,
+        value: ethers.utils.parseEther("1")
+      });
+      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
+      await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
+      var accountTxn = await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,uint256,bytes)"](temp.address, depositAmount, depositTime1, temp.address);
+      var receipt = await accountTxn.wait();
+
+      var ticketEvent = receipt.events.filter(function (one) {
+        return one.event == "TicketCreated";
+      })[0].args;
+
+      drawDate1 = ticketEvent[0];
+    }
+    await prizeLinkedAccountVault.makeDrawV1_Dummy(drawDate1, 999999999999999);
+
+    var { 0: owners1, 1: tickets1, 2: winningTicket1, 3: balanceEachDraw1 } = await prizeLinkedAccountVault.getDrawDetails(drawDate1);
+
+    var winner1 = await prizeLinkedAccountVault.getDrawWinner(drawDate1);
+    console.info("drawDate1 " + drawDate1);
+
+    var winnerTxn1 = await prizeLinkedAccountVault.awardWinnerV1(drawDate1);
+    var receiptWinner1 = await winnerTxn1.wait();
+    var winnerEvent1 = receiptWinner1.events.filter(function (one) {
+      return one.event == "WinnerSelected";
+    })[0].args;
+    var earnt1 = BigInt(balanceEachDraw1) * BigInt(testHelper.standardInterestRate) / BigInt(testHelper.standardInterestRatePercentageBase);
+    expect(winner1).to.equal(winnerEvent1[0]);
+    expect(earnt1).to.equal(winnerEvent1[1]);
+    expect(earnt1).to.equal(await prizeLinkedAccountVault.getAmountBroughtToNextDraw());
+    console.info(await prizeLinkedAccountVault.getAmountBroughtToNextDraw());
+
+    var drawDate2 = BigInt(0);
+    var depositTime2 = (Date.now() / 1000) | 0;
+    for (var i = 0; i < 15; i++) {
+      var temp = await ethers.Wallet.createRandom();
+      await gluwaCoin.mint(temp.address, mintAmount);
+      await bank2.sendTransaction({
+        to: temp.address,
+        value: ethers.utils.parseEther("1")
+      });
+      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
+      await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
+      var accountTxn = await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,uint256,bytes)"](temp.address, depositAmount, depositTime2, temp.address);
+      var receipt = await accountTxn.wait();
+
+      var ticketEvent = receipt.events.filter(function (one) {
+        return one.event == "TicketCreated";
+      })[0].args;
+
+      drawDate2 = ticketEvent[0];
+    }
+    console.info("drawDate2 " + drawDate2);
+    console.info("depositTime2 " + depositTime2);
+    console.info("depositTime1 " + depositTime1);
+
+    const randomMax = 99999999;
+    const randomMin = 10000000;
+    await prizeLinkedAccountVault.makeDrawV1(drawDate2, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
+
+    console.info("drawDate2 " + drawDate2);
+
+    var { 0: owners, 1: tickets, 2: winningTicket2, 3: balanceEachDraw2 } = await prizeLinkedAccountVault.getDrawDetails(drawDate2);
 
 
+    console.info("winningTicket2 " + winningTicket2);
+
+    var winner2 = await prizeLinkedAccountVault.getDrawWinner(drawDate2);
+    console.info("drawDate2 " + drawDate2);
+
+    const { 0: savingAccount_idx,
+      1: savingAccount_hash,
+      2: savingAccount_owner,
+      3: savingAccount_creationDate,
+      4: savingAccount_balance,
+      5: savingAccount_earning,
+      6: savingAccount_state,
+      7: savingAccount_securityReferenceHash } = (await prizeLinkedAccountVault.getSavingAcountFor(winner2));
+
+    var winnerTxn2 = await prizeLinkedAccountVault.awardWinnerV1(drawDate2);
+    var receiptWinner2 = await winnerTxn2.wait();
+    var winnerEvent2 = receiptWinner2.events.filter(function (one) {
+      return one.event == "WinnerSelected";
+    })[0].args;
+    var earnt2 = (earnt1 + BigInt(balanceEachDraw2)) * BigInt(testHelper.standardInterestRate) / BigInt(testHelper.standardInterestRatePercentageBase);
+
+    console.info("earnt2 " + earnt2);
+    expect(winner2).to.equal(winnerEvent2[0]);
+    expect(earnt2).to.equal(winnerEvent2[1]);
+
+    const { 0: savingAccount_idx1,
+      1: savingAccount_hash1,
+      2: savingAccount_owner1,
+      3: savingAccount_creationDate1,
+      4: savingAccount_balance1,
+      5: savingAccount_earning1,
+      6: savingAccount_state1,
+      7: savingAccount_securityReferenceHash1 } = (await prizeLinkedAccountVault.getSavingAcountFor(winner2));
+
+
+  
+    var totalAfterWinning = BigInt(savingAccount_balance) + earnt2;
+    expect(totalAfterWinning).to.equal(savingAccount_balance1);
+
+
+  });
 });
