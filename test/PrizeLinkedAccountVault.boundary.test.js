@@ -38,7 +38,7 @@ var gluwaCoin2;
 
 
 // Start test block
-describe('Gluwacoin', function () {
+describe('Boundary test for drawing and ticket issuance', function () {
   before(async function () {
     this.GluwaAccountModel = await ethers.getContractFactory("GluwaAccountModel");
     this.DateTimeModel = await ethers.getContractFactory("DateTimeModel");

@@ -147,13 +147,23 @@ contract PrizeLinkedAccountVault is
             deposit.creationDate > 0,
             "GluwaPrizeLinkedAccount: The deposit is not found"
         );
+        uint256 next2ndDraw = _calculateDrawTime(deposit.creationDate);
 
-        _createTicketForDeposit(
-            deposit.owner,
-            deposit.creationDate,
-            deposit.amount,
-            _convertDepositToTotalTicket(deposit.amount)
-        );
+        if (_drawParticipantTicket[next2ndDraw][deposit.owner].length == 0) {
+            _createTicketForDeposit(
+                deposit.owner,
+                deposit.creationDate,
+                _addressSavingAccountMapping[deposit.owner].balance,
+                _convertDepositToTotalTicket(deposit.amount)
+            );
+        } else {
+            _createTicketForDeposit(
+                deposit.owner,
+                deposit.creationDate,
+                deposit.amount,
+                _convertDepositToTotalTicket(deposit.amount)
+            );
+        }
         return true;
     }
 
@@ -187,8 +197,8 @@ contract PrizeLinkedAccountVault is
         address recipient,
         uint256 amount
     ) internal returns (bool) {
-        uint256 newBalance = _withdraw(owner, recipient, amount);
-        uint256 newIssued = _convertDepositToTotalTicket(newBalance);
+        _withdraw(owner, recipient, amount);
+        uint256 newIssued = _convertDepositToTotalTicket(amount);
         uint256 next2ndDraw = _calculateDrawTime(now);
         uint256 nextDraw = next2ndDraw - 86400;
         _removeTicket(owner, next2ndDraw, amount, newIssued);
@@ -212,16 +222,31 @@ contract PrizeLinkedAccountVault is
         returns (address[] memory result)
     {
         uint256 t;
-        for (uint256 i = 0; i < _owners.length; i++) {
+        uint256 i;
+        address[] storage previousDrawParticipants = _drawParticipant[
+            drawTimeStamp - 86400
+        ];
+        result = new address[](previousDrawParticipants.length);
+        for (i = 0; i < previousDrawParticipants.length; i++) {
             if (
-                _drawParticipantTicket[drawTimeStamp][_owners[i]].length == 0 &&
-                _addressSavingAccountMapping[_owners[i]].balance > 0 &&
-                _addressSavingAccountMapping[_owners[i]].state ==
+                _drawParticipantTicket[drawTimeStamp][
+                    previousDrawParticipants[i]
+                ].length ==
+                0 &&
+                _addressSavingAccountMapping[previousDrawParticipants[i]]
+                    .balance >
+                0 &&
+                _addressSavingAccountMapping[previousDrawParticipants[i]]
+                    .state ==
                 GluwaAccountModel.AccountState.Active
             ) {
-                result[t] = _owners[i];
+                result[t] = previousDrawParticipants[i];
                 t++;
             }
+        }
+        uint256 unusedSpace = i - t;
+        assembly {
+            mstore(result, sub(mload(result), unusedSpace))
         }
     }
 
@@ -230,23 +255,36 @@ contract PrizeLinkedAccountVault is
         returns (uint256)
     {
         uint32 processed;
-        for (uint256 i = 0; i < _owners.length; i++) {
+        address[] storage previousDrawParticipants = _drawParticipant[
+            drawTimeStamp - 86400
+        ];
+
+        for (uint256 i = 0; i < previousDrawParticipants.length; i++) {
             if (
-                _drawParticipantTicket[drawTimeStamp][_owners[i]].length == 0 &&
-                _addressSavingAccountMapping[_owners[i]].balance > 0 &&
-                _addressSavingAccountMapping[_owners[i]].state ==
+                _drawParticipantTicket[drawTimeStamp][
+                    previousDrawParticipants[i]
+                ].length ==
+                0 &&
+                _addressSavingAccountMapping[previousDrawParticipants[i]]
+                    .balance >
+                0 &&
+                _addressSavingAccountMapping[previousDrawParticipants[i]]
+                    .state ==
                 GluwaAccountModel.AccountState.Active
             ) {
                 _createTicket(
-                    _owners[i],
+                    previousDrawParticipants[i],
                     drawTimeStamp,
-                    _addressSavingAccountMapping[_owners[i]].balance,
+                    _addressSavingAccountMapping[previousDrawParticipants[i]]
+                        .balance,
                     _convertDepositToTotalTicket(
-                        _addressSavingAccountMapping[_owners[i]].balance
+                        _addressSavingAccountMapping[
+                            previousDrawParticipants[i]
+                        ].balance
                     )
                 );
                 processed++;
-                if (processed > _processingCap) break;
+                if (processed >= _processingCap) break;
             }
         }
         return processed;
@@ -259,12 +297,13 @@ contract PrizeLinkedAccountVault is
     {
         require(
             recipient != address(0),
-            "GluwaPrizeLinkedAccount: Recipient address for investment must be defined"
+            "GluwaPrizeLinkedAccount: Recipient address for investment must be defined."
         );
         uint256 totalBalance = _token.balanceOf(address(this));
         require(
             totalBalance - amount >=
-                totalBalance.mul(_lowerLimitPercentage).div(100),
+                totalBalance.mul(_lowerLimitPercentage).div(100) ||
+                _totalDeposit == 0,
             "GluwaPrizeLinkedAccount: the investment amount will make the total balance lower than the bottom threshold."
         );
         _token.transfer(recipient, amount);
@@ -289,17 +328,13 @@ contract PrizeLinkedAccountVault is
         external
         onlyOperator
         returns (bool)
-    {        
+    {
         _boostingFund = _boostingFund.sub(amount);
         _token.transfer(recipient, amount);
         return true;
     }
 
-    function getBoostingFund()
-        external
-        view
-        returns (uint256)
-    {     
+    function getBoostingFund() external view returns (uint256) {
         return _boostingFund;
     }
 

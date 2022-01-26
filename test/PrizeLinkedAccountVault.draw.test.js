@@ -19,7 +19,7 @@ var gluwaCoin2;
 
 
 // Start test block
-describe('Gluwacoin', function () {
+describe('Prize Draw', function () {
   before(async function () {
     [owner, user1, bank1, bank2, user2, user3, lender] = await ethers.getSigners();
   });
@@ -394,7 +394,6 @@ describe('Gluwacoin', function () {
     expect(winner1).to.equal(winnerEvent1[0]);
     expect(earnt1).to.equal(winnerEvent1[1]);
     expect(earnt1).to.equal(await prizeLinkedAccountVault.getAmountBroughtToNextDraw());
-    console.info(await prizeLinkedAccountVault.getAmountBroughtToNextDraw());
 
     var drawDate2 = BigInt(0);
     var depositTime2 = (Date.now() / 1000) | 0;

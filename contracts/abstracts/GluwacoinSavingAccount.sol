@@ -15,7 +15,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
 
     uint256 private _budget;
     uint256 private _minimumDeposit;
-    uint256 internal _totalNonMaturedSaving;
+    uint256 internal _totalDeposit;
     address[] internal _owners;
 
     HashMapIndex.HashMapping private _savingAccountIndex;
@@ -48,7 +48,11 @@ contract GluwacoinSavingAccount is Initializable, Context {
         uint256 deposit
     );
 
-    event Withdrawn(address indexed owner, address indexed recipient, uint256 amount);
+    event Withdrawn(
+        address indexed owner,
+        address indexed recipient,
+        uint256 amount
+    );
 
     function __GluwacoinSavingAccount_init_unchained(
         address tokenAddress,
@@ -127,53 +131,42 @@ contract GluwacoinSavingAccount is Initializable, Context {
             owner_
         );
 
-        bytes32 depositHash = GluwaAccountModel.generateDepositHash(
-            _savingAccountIndex.nextIdx,
-            initialDeposit,
-            address(this),
-            owner_
-        );
-
         _addressSavingAccountMapping[owner_] = GluwaAccountModel.SavingAccount({
             idx: _savingAccountIndex.nextIdx,
             accountHash: accountHash_,
             owner: owner_,
-            balance: initialDeposit,
+            balance: 0,
             creationDate: startDate,
             earning: 0,
             state: GluwaAccountModel.AccountState.Active,
             securityReferenceHash: identityHash
         });
-
-        _depositStorage[depositHash] = GluwaAccountModel.Deposit({
-            idx: _depositIndex.nextIdx,
-            owner: owner_,
-            creationDate: startDate,
-            amount: initialDeposit,
-            accountIdx: _savingAccountIndex.nextIdx
-        });
+       
         _usedIdentityHash[identityHash] = true;
         _savingAccountIndex.add(accountHash_);
-        _depositIndex.add(depositHash);
         _owners.push(owner_);
-        _allTimeTotalContractDeposit += initialDeposit;
+
+        bytes32 depositHash = _deposit(owner_, initialDeposit, startDate, false);
+
         emit AccountCreated(accountHash_, owner_);
-        emit DepositCreated(depositHash, owner_, initialDeposit);
 
         return (accountHash_, depositHash);
     }
 
-    function _withdraw(address owner, address recipient, uint256 amount)
-        internal
-        returns (uint256)
-    {
+    function _withdraw(
+        address owner,
+        address recipient,
+        uint256 amount
+    ) internal returns (uint256) {
         GluwaAccountModel.SavingAccount
             storage account = _addressSavingAccountMapping[owner];
         require(
-            account.balance >= amount && account.state == GluwaAccountModel.AccountState.Active,
+            account.balance >= amount &&
+                account.state == GluwaAccountModel.AccountState.Active,
             "GluwaSavingAccount: Withdrawal amount is higher than deposit or the saving account must be active"
         );
         account.balance -= amount;
+        _totalDeposit -= amount;
         _token.transfer(recipient, amount);
         emit Withdrawn(owner, recipient, amount);
         return account.balance;
@@ -199,7 +192,6 @@ contract GluwacoinSavingAccount is Initializable, Context {
         if (isEarning) {
             account.earning += amount;
         }
-        _allTimeTotalContractDeposit += amount;
         bytes32 depositHash = GluwaAccountModel.generateDepositHash(
             account.idx,
             amount,
@@ -214,6 +206,8 @@ contract GluwacoinSavingAccount is Initializable, Context {
             accountIdx: account.idx
         });
         _depositIndex.add(depositHash);
+        _allTimeTotalContractDeposit += amount;
+        _totalDeposit += amount;
 
         emit DepositCreated(depositHash, owner, amount);
         return depositHash;

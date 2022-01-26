@@ -19,7 +19,7 @@ var gluwaCoin2;
 
 
 // Start test block
-describe('Gluwacoin', function () {
+describe('Withdraw test', function () {
     before(async function () {
         [owner, user1, bank1, bank2, user2, user3, lender] = await ethers.getSigners();
     });

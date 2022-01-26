@@ -69,7 +69,7 @@ describe('Gluwacoin', function () {
     expect(cutOffMinute_1).to.equal(testHelper.cutOffMinute);
     expect(processingCap_1).to.equal(testHelper.processingCap);
     expect(ticketRangeFactor_1).to.equal(1);
-    expect(lowerLimitPercentage_1).to.equal(testHelper.lowerLimitPercentage);
+    expect(BigInt(lowerLimitPercentage_1)).to.equal(testHelper.lowerLimitPercentage);
 
   });
 
