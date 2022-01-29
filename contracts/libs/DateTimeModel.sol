@@ -1,13 +1,13 @@
 pragma solidity ^0.5.0;
 
 library DateTimeModel {
-    uint256 public constant YEAR_IN_SECOND = 31536000;
-    uint256 public constant LEAP_YEAR_IN_SECOND = 31622400;
-    uint256 public constant DAY_IN_SECOND = 86400;
-    uint256 public constant HOUR_IN_SECOND = 3600;
-    uint256 public constant MINUTE_IN_SECOND = 60;
+    uint256 internal constant YEAR_IN_SECOND = 31536000;
+    uint256 internal constant LEAP_YEAR_IN_SECOND = 31622400;
+    uint256 internal constant DAY_IN_SECOND = 86400;
+    uint256 internal constant HOUR_IN_SECOND = 3600;
+    uint256 internal constant MINUTE_IN_SECOND = 60;
 
-    uint16 public constant START_YEAR = 1970;
+    uint16 internal constant START_YEAR = 1970;
 
     struct DateTime {
         uint16 year;
@@ -21,19 +21,19 @@ library DateTimeModel {
     /// @dev a year is a leap year if:
     /// - It is divisible by 4
     /// - Years that are divisible by 100 cannot be a leap year unless they are also divisible by 400
-    function isLeapYear(uint256 year) public pure returns (bool) {
+    function isLeapYear(uint256 year) internal pure returns (bool) {
         return year % 400 == 0 || (year % 4 == 0 && year % 100 != 0);
     }
 
     /// @dev a year is a leap year if:
     /// - It is divisible by 4
     /// - Years that are divisible by 100 cannot be a leap year unless they are also divisible by 400
-    function getTotalLeapYearBefore(uint256 year) public pure returns (uint16) {
+    function getTotalLeapYearBefore(uint256 year) internal pure returns (uint16) {
         year -= 1;
         return uint16(year / 4 + year / 400 - year / 100);
     }
 
-    function getYear(uint256 timeStamp) public pure returns (uint16) {
+    function getYear(uint256 timeStamp) internal pure returns (uint16) {
         uint256 year = START_YEAR + timeStamp / YEAR_IN_SECOND;
         uint256 totalLeapYears = getTotalLeapYearBefore(year) -
             getTotalLeapYearBefore(START_YEAR);
@@ -55,7 +55,7 @@ library DateTimeModel {
     }
 
     function getDaysInMonth(uint8 month, uint256 year)
-        public
+        internal
         pure
         returns (uint8)
     {
@@ -69,15 +69,15 @@ library DateTimeModel {
         }
     }
 
-    function getHour(uint256 timeStamp) public pure returns (uint8) {
+    function getHour(uint256 timeStamp) internal pure returns (uint8) {
         return uint8((timeStamp / 3600) % 24);
     }
 
-    function getMinute(uint256 timeStamp) public pure returns (uint8) {
+    function getMinute(uint256 timeStamp) internal pure returns (uint8) {
         return uint8((timeStamp / 60) % 60);
     }
 
-    function getSecond(uint256 timeStamp) public pure returns (uint8) {
+    function getSecond(uint256 timeStamp) internal pure returns (uint8) {
         return uint8(timeStamp % 60);
     }
 
@@ -88,7 +88,7 @@ library DateTimeModel {
         uint8 hour,
         uint8 minute,
         uint8 second
-    ) public pure returns (uint256 timeStamp) {
+    ) internal pure returns (uint256 timeStamp) {
         timeStamp = second;
         timeStamp += MINUTE_IN_SECOND * (minute);
         timeStamp += HOUR_IN_SECOND * (hour);

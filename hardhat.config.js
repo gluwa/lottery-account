@@ -2,7 +2,7 @@ require("@nomiclabs/hardhat-waffle");
 require('solidity-coverage');
 require("@nomiclabs/hardhat-ethers");
 require('@openzeppelin/hardhat-upgrades');
-
+require("hardhat-gas-reporter");
 
 
 /**

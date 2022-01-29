@@ -47,7 +47,7 @@ library GluwaAccountModel {
         uint256 deposit,
         address contractAddress,
         address owner
-    ) public pure returns (bytes32) {
+    ) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(id, deposit, contractAddress, owner));
     }
 
@@ -55,7 +55,7 @@ library GluwaAccountModel {
         uint256 startDate,
         address contractAddress,
         address owner
-    ) public pure returns (bytes32) {
+    ) internal pure returns (bytes32) {
         return
             keccak256(
                 abi.encodePacked(
