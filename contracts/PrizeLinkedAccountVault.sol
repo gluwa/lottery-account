@@ -251,7 +251,7 @@ contract PrizeLinkedAccountVault is
     }
 
     function regenerateTicketForNextDraw(uint256 drawTimeStamp)
-        external
+        external onlyOperator
         returns (uint256)
     {
         uint32 processed;
