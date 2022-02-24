@@ -42,28 +42,39 @@ library GluwaAccountModel {
         bytes securityReferenceHash;
     }
 
-    function generateDepositHash(
+    function generateHash(
         uint256 id,
+        uint256 timestamp,
         uint256 deposit,
         address contractAddress,
         address owner
     ) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(id, deposit, contractAddress, owner));
+        return keccak256(abi.encodePacked(id, timestamp, deposit, contractAddress, owner));
     }
 
-    function generateAccountHash(
-        uint256 startDate,
-        address contractAddress,
-        address owner
-    ) public pure returns (bytes32) {
-        return
-            keccak256(
-                abi.encodePacked(
-                    startDate,
-                    "SavingAccount",
-                    contractAddress,
-                    owner
-                )
-            );
-    }
+    // function generateDepositHash(
+    //     uint256 id,
+    //     uint256 deposit,
+    //     address contractAddress,
+    //     uint256 creationDate,
+    //     address owner
+    // ) public pure returns (bytes32) {
+    //     return keccak256(abi.encodePacked(id, deposit, contractAddress, creationDate, owner));
+    // }
+
+    // function generateAccountHash(
+    //     uint256 startDate, 
+    //     address contractAddress,
+    //     address owner
+    // ) public pure returns (bytes32) {
+    //     return
+    //         keccak256(
+    //             abi.encodePacked(
+    //                 startDate,
+    //                 "SavingAccount",
+    //                 contractAddress,
+    //                 owner
+    //             )
+    //         );
+    // }
 }

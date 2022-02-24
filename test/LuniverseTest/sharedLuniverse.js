@@ -1,6 +1,6 @@
 const abi = require('./abi');
-const PLSASandBoxAddress = "0x0022684736f4ca57d37881d8093e4f97d28cb568";
-// const PLSASandBoxAddress = "0x1a610bd85991e08398101328d5cf29b41e318f40";
+const PLSASandBoxAddress = "0xebc2b84f6885e75d4010c39a266ca3bf7b4259b3";
+// const PLSASandBoxAddress = "0x0022684736f4ca57d37881d8093e4f97d28cb568";
 const privateKey = "ac407fa511df5105b17881936d07c9be43ed22fc5b80d676383fdaf31ffedb5e";
 const luniversePRC = "http://baas-rpc.luniverse.io:8545?lChainId=1635501961136826136";  
 const GluwaCoinAddress = "0x527C4222550b07aabF5Fe301aD88C5799E944Bf1";
