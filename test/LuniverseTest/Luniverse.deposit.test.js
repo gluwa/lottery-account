@@ -44,6 +44,26 @@ describe('Deposit test', function () {
     await testHelper.submitRawTxn(input, user1, ethers, provider);
   });
 
+  it('accountHash should be different even with same user same amount', async function () {
+    owner = (await testHelper.LuniverseContractInstancelize()).owner; 
+    let abi = [ "event AccountCreated(bytes32 indexed depositHash,address indexed owner)" ];
+    let iface = new ethers.utils.Interface(abi);
+    var lasthash;
+    for(var i=0;i<3;i++){
+      input = await prizeLinkedAccountVault.connect(owner).populateTransaction['createPrizedLinkAccountDummy(address,uint256,bytes)'](user1.address, depositAmount / BigInt(10), user1.address);
+      receipt = await testHelper.submitRawTxn(input,owner, ethers, provider);
+      var event;
+      for(var j=0;j<receipt.logs.length; j++){
+        try{
+          event = iface.parseLog(receipt.logs[j]);
+        }catch(err){}
+      }    
+      depositHash = event.args[0];
+      console.log(depositHash)
+      expect(depositHash).to.not.equal(lasthash);
+      lasthash = depositHash;
+    }
+  });
   it('depositHash should be different even with same user same amount', async function () {
     owner = (await testHelper.LuniverseContractInstancelize()).owner; 
     let abi = [ "event DepositCreated(bytes32 indexed depositHash,address indexed owner,uint256 deposit)" ];

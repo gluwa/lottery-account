@@ -1,8 +1,8 @@
 pragma solidity ^0.5.0;
 
-import "./abstracts/VaultControl.sol";
-import "./abstracts/GluwacoinSavingAccountNoLib.sol";
-import "./abstracts/GluwaPrizeDrawNoLib.sol";
+import "../abstracts/VaultControl.sol";
+import "./GluwacoinSavingAccountNoLib.sol";
+import "./GluwaPrizeDrawNoLib.sol";
 
 contract PrizeLinkedAccountVaultLuniverse is
     VaultControl,
