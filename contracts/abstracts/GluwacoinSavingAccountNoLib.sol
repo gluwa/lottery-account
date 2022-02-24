@@ -4,11 +4,10 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol";
 import "./IERC20.sol";
-import "../libs/GluwaAccountModel.sol";
 import "../libs/HashMapIndex.sol";
 import "../libs/UintArrayUtil.sol";
  
-contract GluwacoinSavingAccount is Initializable, Context {
+contract GluwacoinSavingAccountNoLib is Initializable, Context {
     using HashMapIndex for HashMapIndex.HashMapping;
     using SafeMath for uint256;
     using UintArrayUtil for uint256[];
@@ -17,6 +16,45 @@ contract GluwacoinSavingAccount is Initializable, Context {
     uint256 private _minimumDeposit;
     uint256 internal _totalDeposit;
     address[] internal _owners;
+    struct Deposit {
+        // Index of this Deposit
+        uint256 idx;
+        uint256 accountIdx;
+        // address of the Account owner
+        address owner;
+        uint256 creationDate;
+        uint256 amount;
+    }
+
+    struct SavingAccount {
+        // Index of this account
+        uint256 idx;
+        bytes32 accountHash;
+        // address of the Account owner
+        address owner;        
+        uint256 creationDate;
+        uint256 balance;
+        uint256 earning;
+        // Different states a Account can be in
+        AccountState state;
+        bytes securityReferenceHash;
+    }
+     /**
+     * @dev Enum of the different states a Account Account can be in.
+     */
+    enum AccountState {
+        /*0*/
+        Pending,
+        /*1*/
+        Active,
+        /*2*/
+        Defaulted,
+        /*3*/
+        Locked,
+        /*4*/
+        Closed
+    }
+
 
     HashMapIndex.HashMapping private _savingAccountIndex;
     HashMapIndex.HashMapping private _depositIndex;
@@ -34,9 +72,9 @@ contract GluwacoinSavingAccount is Initializable, Context {
     /// @dev The supported token which can be deposited to a Saving account.
     IERC20 internal _token;
     /// @dev The total holding balance is SUM of all principal and yeild of non-matured Saving.
-    mapping(address => GluwaAccountModel.SavingAccount)
+    mapping(address => SavingAccount)
         internal _addressSavingAccountMapping;
-    mapping(bytes32 => GluwaAccountModel.Deposit) internal _depositStorage;
+    mapping(bytes32 => Deposit) internal _depositStorage;
     mapping(bytes => bool) private _usedIdentityHash;
     //mapping(bytes32 => GluwaAccountModel.SavingAccount) internal _savingAccountStorage;
 
@@ -87,11 +125,11 @@ contract GluwacoinSavingAccount is Initializable, Context {
             uint256,
             uint256,
             uint256,
-            GluwaAccountModel.AccountState,
+            AccountState,
             bytes memory
         )
     {
-        GluwaAccountModel.SavingAccount
+        SavingAccount
             storage SavingAccount = _addressSavingAccountMapping[account];
         return (
             SavingAccount.idx,
@@ -125,7 +163,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
             "GluwaSavingAccount: Identity hash is already used"
         );
 
-        bytes32 accountHash_ = GluwaAccountModel.generateHash(
+        bytes32 accountHash_ = generateHash(
             _savingAccountIndex.nextIdx,
             startDate,
             initialDeposit,
@@ -133,14 +171,14 @@ contract GluwacoinSavingAccount is Initializable, Context {
             owner_
         );
 
-        _addressSavingAccountMapping[owner_] = GluwaAccountModel.SavingAccount({
+        _addressSavingAccountMapping[owner_] = SavingAccount({
             idx: _savingAccountIndex.nextIdx,
             accountHash: accountHash_,
             owner: owner_,
             balance: 0,
             creationDate: startDate,
             earning: 0,
-            state: GluwaAccountModel.AccountState.Active,
+            state: AccountState.Active,
             securityReferenceHash: identityHash
         });
        
@@ -160,11 +198,11 @@ contract GluwacoinSavingAccount is Initializable, Context {
         address recipient,
         uint256 amount
     ) internal returns (uint256) {
-        GluwaAccountModel.SavingAccount
+        SavingAccount
             storage account = _addressSavingAccountMapping[owner];
         require(
             account.balance >= amount &&
-                account.state == GluwaAccountModel.AccountState.Active,
+                account.state == AccountState.Active,
             "GluwaSavingAccount: Withdrawal amount is higher than deposit or the saving account must be active"
         );
         account.balance -= amount;
@@ -182,7 +220,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
     ) internal returns (bytes32) {
         _validateSavingBalance(amount);
 
-        GluwaAccountModel.SavingAccount
+        SavingAccount
             storage account = _addressSavingAccountMapping[owner];
 
         require(
@@ -194,14 +232,14 @@ contract GluwacoinSavingAccount is Initializable, Context {
         if (isEarning) {
             account.earning += amount;
         } 
-        bytes32 depositHash = GluwaAccountModel.generateHash(
+        bytes32 depositHash = generateHash(
             account.idx,
             dateTime,
             amount,
             address(this),
             owner
         );
-        _depositStorage[depositHash] = GluwaAccountModel.Deposit({
+        _depositStorage[depositHash] = Deposit({
             idx: _depositIndex.nextIdx,
             owner: owner,
             creationDate: dateTime,
@@ -227,7 +265,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
             uint256
         )
     {
-        GluwaAccountModel.Deposit storage deposit = _depositStorage[
+        Deposit storage deposit = _depositStorage[
             depositHash
         ];
         return (
@@ -249,7 +287,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
             uint256,
             uint256,
             uint256,
-            GluwaAccountModel.AccountState,
+            AccountState,
             bytes memory
         )
     {
@@ -318,5 +356,14 @@ contract GluwacoinSavingAccount is Initializable, Context {
         );
     }
 
+    function generateHash(
+        uint256 id,
+        uint256 timestamp,
+        uint256 deposit,
+        address contractAddress,
+        address owner
+    ) public pure returns (bytes32) {
+        return keccak256(abi.encodePacked(id, timestamp, deposit, contractAddress, owner));
+    }
     uint256[50] private __gap;
 }

@@ -39,7 +39,22 @@ describe('Deposit test', function () {
     const result = (await prizeLinkedAccountVault.callStatic["createPrizedLinkAccount(address,uint256,bytes)"](user1.address, depositAmount, user1.address));
     expect(result).to.equal(true);
   });
+  it('depositHash should be different even with same user same amount', async function () {
+    await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount / BigInt(2), user1.address);
+    var lastHash;
+    await gluwaCoin.connect(user1).approve(prizeLinkedAccountVault.address, depositAmount * BigInt(10));
+    for(var i=0;i<10;i++){
+      txn = await testHelper.depositPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount);
+      receipt = await txn.wait();
+      var depositHash = receipt.events.filter(function (one) {
+        return one.event == "DepositCreated";
+      })[0].args[0];
+      expect(depositHash).to.not.equal(lastHash);
+      lastHash = depositHash;
+    }
 
+  });
+  
   it('get prize-linked account info', async function () {
     var currentTime = Math.floor(Date.now() / 1000);
     var accountTxn = await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount, user1.address);
