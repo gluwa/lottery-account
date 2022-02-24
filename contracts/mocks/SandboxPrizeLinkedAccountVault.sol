@@ -1,8 +1,8 @@
 pragma solidity ^0.5.0;
 
-import "../PrizeLinkedAccountVault.sol";
+import "./PrizeLinkedAccountVaultMock.sol";
 
-contract SandboxPrizeLinkedAccountVault is PrizeLinkedAccountVault {   
+contract SandboxPrizeLinkedAccountVault is PrizeLinkedAccountVaultMock {   
 
     function makeDrawV1_Dummy(uint256 drawTimeStamp, uint256 seed)
         external
@@ -46,6 +46,23 @@ contract SandboxPrizeLinkedAccountVault is PrizeLinkedAccountVault {
         return _createPrizedLinkTickets(depositHash);
     }
 
+    function createPrizedLinkAccountDummy(
+        address owner,
+        uint256 amount,
+        bytes calldata securityHash
+    ) external onlyOperator returns (bool) {
+        require(
+            _token.transferFrom(owner, address(this), amount),
+            "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
+        );
+        (, bytes32 depositHash) = _createSavingAccountDummy(
+            owner,
+            amount,
+            now,
+            securityHash
+        );
+        return _createPrizedLinkTickets(depositHash);
+    }
     function depositPrizedLinkAccount(address owner, uint256 amount, uint256 dateTime)
         external
         onlyOperator
