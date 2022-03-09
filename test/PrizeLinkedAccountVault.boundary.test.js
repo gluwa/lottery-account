@@ -48,12 +48,7 @@ describe('Boundary test for drawing and ticket issuance', function () {
     await GluwaAccountModel.deployed();
     this.Gluwacoin = await ethers.getContractFactory("SandboxGluwacoin");
     this.Gluwacoin2 = await ethers.getContractFactory("SandboxGluwacoin");
-    this.PrizeLinkedAccountVault = await ethers.getContractFactory("SandboxPrizeLinkedAccountVault", {
-      libraries: {
-        GluwaAccountModel: GluwaAccountModel.address,
-        DateTimeModel: DateTimeModel.address
-      },
-    });
+    this.PrizeLinkedAccountVault = await ethers.getContractFactory("SandboxPrizeLinkedAccountVault");
     [owner, user1, bank1, bank2] = await ethers.getSigners();
     ownerAddress = owner.address;
   });
