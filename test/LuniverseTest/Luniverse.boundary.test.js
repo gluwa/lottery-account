@@ -41,6 +41,7 @@ var iface;
 var abi2;
 var iface2;
 // Start test block
+if(testHelper.LuniversetestActivate)
 describe('Boundary test for drawing and ticket issuance', function () {
   before(async function () {
     this.GluwaAccountModel = await ethers.getContractFactory("GluwaAccountModel");

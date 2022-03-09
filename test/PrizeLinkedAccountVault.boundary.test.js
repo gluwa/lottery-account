@@ -36,44 +36,22 @@ var processingCap = 272;
 var gluwaCoin;
 var gluwaCoin2;
 
+var mintAmount = BigInt(2000000) * testHelper.decimalsVal;
+var depositAmount = BigInt(30000) * testHelper.decimalsVal;
 
 // Start test block
 describe('Boundary test for drawing and ticket issuance', function () {
   before(async function () {
-    this.GluwaAccountModel = await ethers.getContractFactory("GluwaAccountModel");
-    this.DateTimeModel = await ethers.getContractFactory("DateTimeModel");
-    var GluwaAccountModel = await this.GluwaAccountModel.deploy();
-    var DateTimeModel = await this.DateTimeModel.deploy();
-    await DateTimeModel.deployed();
-    await GluwaAccountModel.deployed();
-    this.Gluwacoin = await ethers.getContractFactory("SandboxGluwacoin");
-    this.Gluwacoin2 = await ethers.getContractFactory("SandboxGluwacoin");
-    this.PrizeLinkedAccountVault = await ethers.getContractFactory("SandboxPrizeLinkedAccountVault");
-    [owner, user1, bank1, bank2] = await ethers.getSigners();
-    ownerAddress = owner.address;
+    [owner, user1, bank1, bank2, user2, user3, lender] = await ethers.getSigners();
   });
 
   beforeEach(async function () {
-    gluwaCoin = await this.Gluwacoin.deploy(name, symbol, decimals);
-    gluwaCoin2 = await this.Gluwacoin2.deploy(name, symbol, decimals);
-    prizeLinkedAccountVault = await this.PrizeLinkedAccountVault.deploy();
-    await gluwaCoin.deployed();
-    await gluwaCoin2.deployed();
-    await prizeLinkedAccountVault.deployed();
-    gluwaCoinAddress = gluwaCoin.address;
-    prizeLinkedAccountVault.address = prizeLinkedAccountVault.address;
-    prizeLinkedAccountVault.initialize(ownerAddress, gluwaCoinAddress, standardInterestRate,
-      standardInterestRatePercentageBase, budget, ticketPerToken,
-      cutOffHour, cutOffMinute, processingCap, ticketRangeFactor, lowerLimitPercentage);
-    gluwaCoin.mint(ownerAddress, large_mintAmount);
-    gluwaCoin.mint(user1.address, large_mintAmount);
-    await gluwaCoin.connect(user1).approve(prizeLinkedAccountVault.address, large_mintAmount);
+    [prizeLinkedAccountVault, gluwaCoin, gluwaCoin2] = await testHelper.setupContractTesting(owner, user1, user2, large_mintAmount, large_depositAmount);
   });
 
   it('create prize-linked account with many tickets', async function () {
     var accountTxn = await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, large_depositAmount, user1.address);
     var receipt = await accountTxn.wait();
-
     var ticketEvent = receipt.events.filter(function (one) {
       return one.event == "TicketCreated";
     })[0].args;
@@ -171,7 +149,6 @@ describe('Boundary test for drawing and ticket issuance', function () {
     await prizeLinkedAccountVault.makeDrawV1(drawDate,Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
     var { 0: owners, 1: tickets, 2: winningTicket, 3: balanceEachDraw } = await prizeLinkedAccountVault.getDrawDetails(drawDate);
 
-    console.info(winningTicket);
     expect(totalInDraw).to.equal(owners.length);
     expect(totalInDraw).to.equal(tickets.length);
 

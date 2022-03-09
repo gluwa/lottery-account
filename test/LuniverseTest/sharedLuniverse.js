@@ -128,7 +128,7 @@ const ticketPerToken = 1;
 const processingCap = 110;
 
 const errorOnlyAdmin = "Restricted to Admins.";
-
+const LuniversetestActivate = false;// set true to enable Luniverse test
 
 module.exports = {
     getTimeFromTimestamp, createWallets,
@@ -139,5 +139,5 @@ module.exports = {
     name, symbol, decimals,
     lowerLimitPercentage, standardInterestRate, standardInterestRatePercentageBase, cutOffHour, cutOffMinute, ticketRangeFactor,
     decimalsVal, budget, ticketPerToken, processingCap,
-    errorOnlyAdmin, LuniverseContractInstancelize
+    errorOnlyAdmin, LuniverseContractInstancelize, LuniversetestActivate
 }

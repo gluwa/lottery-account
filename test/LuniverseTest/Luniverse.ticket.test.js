@@ -20,6 +20,8 @@ var abi;
 var iface;
 var abi2;
 var iface2;
+
+if(testHelper.LuniversetestActivate)
 // Start test block
 describe('Ticket Reissuance', function () {
 

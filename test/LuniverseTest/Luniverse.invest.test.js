@@ -19,6 +19,8 @@ var gluwaCoin2;
 let abi;
 let iface;
 
+
+if(testHelper.LuniversetestActivate)
 // Start test block
 describe('Invest from Vault',async function () {
 
