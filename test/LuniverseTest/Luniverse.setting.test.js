@@ -17,6 +17,8 @@ var prizeLinkedAccountVault;
 var gluwaCoin;
 var gluwaCoin2;
 
+
+if(testHelper.LuniversetestActivate)
 // Start test block
 describe('Gluwacoin', function () {
   before(async function () {

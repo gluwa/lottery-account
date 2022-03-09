@@ -16,6 +16,8 @@ var gluwaCoin;
 var gluwaCoin2;
 var provider;
 // Start test block
+
+if(testHelper.LuniversetestActivate)
 describe('Deposit test', function () {
   before(async function () {
     this.GluwaAccountModel = await ethers.getContractFactory("GluwaAccountModel");
