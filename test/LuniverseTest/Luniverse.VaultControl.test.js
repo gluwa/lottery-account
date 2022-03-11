@@ -16,6 +16,7 @@ var provider = ethers.provider;
 var input;
 
 
+if(testHelper.LuniversetestActivate)
 // Start test block
 describe('Vault Control', function () {
     before(async function () {

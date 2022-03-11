@@ -6,18 +6,32 @@ import "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol";
 import "../libs/DrawTicketModel.sol";
 import "../libs/SimpleIndex.sol";
 import "../libs/UintArrayUtil.sol";
-import "../libs/DateTimeModel.sol";
+// import "../libs/DateTimeModel.sol";
+contract GluwaPrizeDrawNoLib is Initializable, Context {
+    uint256 public constant YEAR_IN_SECOND = 31536000;
+    uint256 public constant LEAP_YEAR_IN_SECOND = 31622400;
+    uint256 public constant DAY_IN_SECOND = 86400;
+    uint256 public constant HOUR_IN_SECOND = 3600;
+    uint256 public constant MINUTE_IN_SECOND = 60;
 
-contract GluwaPrizeDraw is Initializable, Context {
+    uint16 public constant START_YEAR = 1970;
+
     using SafeMath for uint256;
 
     using UintArrayUtil for uint256[];
     using SimpleIndex for SimpleIndex.Index;
-
+    struct DateTime {
+        uint16 year;
+        uint8 month;
+        uint8 day;
+        uint8 hour;
+        uint8 minute;
+        uint8 second;
+    }
     //IDepositableAccount private _depositContract;
     SimpleIndex.Index private _drawTicketIndex;
-    uint8 private _cutOffHour; //Hour 0-23, to ensure 24 hour before the drawdate
-    uint8 private _cutOffMinute; //Minute 0-59, to ensure 24 hour before the drawdate
+    uint8 internal _cutOffHour; //Hour 0-23, to ensure 24 hour before the drawdate
+    uint8 internal _cutOffMinute; //Minute 0-59, to ensure 24 hour before the drawdate
     uint128 internal _ticketRangeFactor; // Factor to ensure the chance 2 userss tickets in a draw overlapping each other is very low
     uint256 internal _totalPrizeBroughForward;
     mapping(uint256 => DrawTicketModel.DrawTicket) internal _tickets;
@@ -77,7 +91,7 @@ contract GluwaPrizeDraw is Initializable, Context {
         uint256 min,
         uint256 max,
         bytes memory externalFactor
-    ) internal view returns (uint256) {
+    ) public view returns (uint256) {
         uint256 random = (uint256(
             keccak256(
                 abi.encodePacked(
@@ -100,13 +114,23 @@ contract GluwaPrizeDraw is Initializable, Context {
         returns (uint256 min, uint256 max)
     {
         uint96[] storage drawTickets = _drawTicketMapping[drawTimeStamp];
-        require(drawTickets.length >0,"No Participant at this time");
         max = _tickets[drawTickets[drawTickets.length - 1]].upper;
         min = _tickets[drawTickets[0]].lower;
     }
-
-    function _findDrawWinner(uint256 drawTimeStamp, bytes memory externalFactor)
+     function _findDrawWinner_Dummy(uint256 drawTimeStamp, bytes memory externalFactor)
         internal
+        returns (uint256)
+    {
+        // require(
+        //     _drawWinner[drawTimeStamp] == 0,
+        //     "GluwaPrizeDraw: the draw has been made"
+        // );
+        (uint256 min, uint256 max) = findMinMaxForDraw(drawTimeStamp);
+        _drawWinner[drawTimeStamp] = _randomNumber(min, max, externalFactor);
+        return _drawWinner[drawTimeStamp];
+    }
+    function _findDrawWinner(uint256 drawTimeStamp, bytes memory externalFactor)
+        public
         returns (uint256)
     {
         require(
@@ -145,11 +169,11 @@ contract GluwaPrizeDraw is Initializable, Context {
     }
 
     function _calculateDrawTime(uint256 txnTimeStamp)
-        internal
+        public
         view
         returns (uint256 drawTimeStamp)
     {
-        DateTimeModel.DateTime memory drawDateTime = DateTimeModel.toDateTime(
+        DateTime memory drawDateTime = toDateTime(
             txnTimeStamp
         );
         uint8 nextDrawDay = 2;
@@ -160,7 +184,7 @@ contract GluwaPrizeDraw is Initializable, Context {
         ) {
             nextDrawDay = 1;
         }
-        uint8 daysInMonth = DateTimeModel.getDaysInMonth(
+        uint8 daysInMonth = getDaysInMonth(
             drawDateTime.month,
             drawDateTime.year
         );
@@ -184,7 +208,7 @@ contract GluwaPrizeDraw is Initializable, Context {
         }
 
         drawDateTime.second = 0;
-        drawTimeStamp = DateTimeModel.toTimeStamp(
+        drawTimeStamp = toTimeStamp(
             drawDateTime.year,
             drawDateTime.month,
             drawDateTime.day,
@@ -339,6 +363,148 @@ contract GluwaPrizeDraw is Initializable, Context {
     function getAmountBroughtToNextDraw() public view returns (uint256) {
         return _totalPrizeBroughForward;
     }
+    function isLeapYear(uint256 year) public pure returns (bool) {
+        return year % 400 == 0 || (year % 4 == 0 && year % 100 != 0);
+    }
 
+    /// @dev a year is a leap year if:
+    /// - It is divisible by 4
+    /// - Years that are divisible by 100 cannot be a leap year unless they are also divisible by 400
+    function getTotalLeapYearBefore(uint256 year) public pure returns (uint16) {
+        year -= 1;
+        return uint16(year / 4 + year / 400 - year / 100);
+    }
+
+    function getYear(uint256 timeStamp) public pure returns (uint16) {
+        uint256 year = START_YEAR + timeStamp / YEAR_IN_SECOND;
+        uint256 totalLeapYears = getTotalLeapYearBefore(year) -
+            getTotalLeapYearBefore(START_YEAR);
+
+        uint256 totalSeconds = YEAR_IN_SECOND *
+            (year - START_YEAR - totalLeapYears) +
+            LEAP_YEAR_IN_SECOND *
+            totalLeapYears;
+
+        while (totalSeconds > timeStamp) {
+            if (isLeapYear(year - 1)) {
+                totalSeconds -= LEAP_YEAR_IN_SECOND;
+            } else {
+                totalSeconds -= YEAR_IN_SECOND;
+            }
+            year -= 1;
+        }
+        return uint16(year);
+    }
+
+    function getDaysInMonth(uint8 month, uint256 year)
+        public
+        pure
+        returns (uint8)
+    {
+        if (month == 2) {
+            if (isLeapYear(year)) return 29;
+            return 28;
+        } else if (month == 4 || month == 6 || month == 9 || month == 11) {
+            return 30;
+        } else {
+            return 31;
+        }
+    }
+
+    function getHour(uint256 timeStamp) public pure returns (uint8) {
+        return uint8((timeStamp / 3600) % 24);
+    }
+
+    function getMinute(uint256 timeStamp) public pure returns (uint8) {
+        return uint8((timeStamp / 60) % 60);
+    }
+
+    function getSecond(uint256 timeStamp) public pure returns (uint8) {
+        return uint8(timeStamp % 60);
+    }
+
+    function toTimeStamp(
+        uint16 year,
+        uint8 month,
+        uint8 day,
+        uint8 hour,
+        uint8 minute,
+        uint8 second
+    ) public pure returns (uint256 timeStamp) {
+        timeStamp = second;
+        timeStamp += MINUTE_IN_SECOND * (minute);
+        timeStamp += HOUR_IN_SECOND * (hour);
+        timeStamp += DAY_IN_SECOND * (day - 1);
+
+        uint16 i;
+        for (i = START_YEAR; i < year; i++) {
+            if (isLeapYear(i)) {
+                timeStamp += LEAP_YEAR_IN_SECOND;
+            } else {
+                timeStamp += YEAR_IN_SECOND;
+            }
+        }
+
+        uint8[12] memory monthDayCounts;
+        monthDayCounts[0] = 31;
+        if (isLeapYear(year)) {
+            monthDayCounts[1] = 29;
+        } else {
+            monthDayCounts[1] = 28;
+        }
+        monthDayCounts[2] = 31;
+        monthDayCounts[3] = 30;
+        monthDayCounts[4] = 31;
+        monthDayCounts[5] = 30;
+        monthDayCounts[6] = 31;
+        monthDayCounts[7] = 31;
+        monthDayCounts[8] = 30;
+        monthDayCounts[9] = 31;
+        monthDayCounts[10] = 30;
+        monthDayCounts[11] = 31;
+
+        for (i = 0; i < month - 1; i++) {
+            timeStamp += DAY_IN_SECOND * monthDayCounts[i];
+        }
+    }
+    function toDateTime(uint256 timeStamp)
+            internal
+            pure
+            returns (DateTime memory dateTime)
+        {
+            dateTime.year = getYear(timeStamp);
+            uint256 totalLeapYears = getTotalLeapYearBefore(dateTime.year) -
+                getTotalLeapYearBefore(START_YEAR);
+            uint256 totalSeconds = YEAR_IN_SECOND *
+                (dateTime.year - START_YEAR - totalLeapYears) +
+                LEAP_YEAR_IN_SECOND *
+                totalLeapYears;
+
+            uint256 totalSecondsInMonth;
+            uint8 daysInMonth;
+            uint8 i;
+            for (i = 1; i <= 12; i++) {
+                daysInMonth = getDaysInMonth(i, dateTime.year);
+                totalSecondsInMonth = DAY_IN_SECOND * daysInMonth;
+                if (totalSecondsInMonth + totalSeconds > timeStamp) {
+                    dateTime.month = i;
+                    break;
+                }
+                totalSeconds += totalSecondsInMonth;
+            }
+
+            for (i = 1; i <= daysInMonth; i++) {
+                if (DAY_IN_SECOND + totalSeconds > timeStamp) {
+                    dateTime.day = i;
+                    break;
+                }
+                totalSeconds += DAY_IN_SECOND;
+            }
+
+            dateTime.hour = getHour(timeStamp);
+            dateTime.minute = getMinute(timeStamp);
+            dateTime.second = getSecond(timeStamp);
+    }
     uint256[50] private __gap;
 }
+

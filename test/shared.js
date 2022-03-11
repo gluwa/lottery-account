@@ -19,13 +19,12 @@ async function setupContractTesting(owner, user1, user2, mintAmount, depositAmou
     await GluwaAccountModel.deployed();
     this.Gluwacoin = await ethers.getContractFactory("SandboxGluwacoin");
     this.Gluwacoin2 = await ethers.getContractFactory("SandboxGluwacoin");
-    // this.PrizeLinkedAccountVault = await ethers.getContractFactory("SandboxPrizeLinkedAccountVault", {
-    //     libraries: {
-    //         GluwaAccountModel: GluwaAccountModel.address,
-    //         DateTimeModel: DateTimeModel.address
-    //     },
-    // }); Library linking is not applicable for Luniverse
-    this.PrizeLinkedAccountVault = await ethers.getContractFactory("SandboxPrizeLinkedAccountVault");
+    this.PrizeLinkedAccountVault = await ethers.getContractFactory("SandboxPrizeLinkedAccountVault", {
+        libraries: {
+            GluwaAccountModel: GluwaAccountModel.address
+        },
+    }); //Library linking is not applicable for Luniverse
+    // this.PrizeLinkedAccountVault = await ethers.getContractFactory("SandboxPrizeLinkedAccountVault");
     gluwaCoin = await this.Gluwacoin.deploy(name, symbol, decimals);
     gluwaCoin2 = await this.Gluwacoin2.deploy(name, symbol, decimals);
     prizeLinkedAccountVault = await this.PrizeLinkedAccountVault.deploy();

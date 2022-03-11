@@ -3,12 +3,12 @@ pragma solidity ^0.5.0;
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/GSN/Context.sol";
 import "@openzeppelin/contracts-ethereum-package/contracts/Initializable.sol";
-import "./IERC20.sol";
+import "../abstracts/IERC20.sol";
 import "../libs/GluwaAccountModel.sol";
 import "../libs/HashMapIndex.sol";
 import "../libs/UintArrayUtil.sol";
  
-contract GluwacoinSavingAccount is Initializable, Context {
+contract GluwacoinSavingAccountMock is Initializable, Context {
     using HashMapIndex for HashMapIndex.HashMapping;
     using SafeMath for uint256;
     using UintArrayUtil for uint256[];
@@ -155,6 +155,47 @@ contract GluwacoinSavingAccount is Initializable, Context {
         return (accountHash_, depositHash);
     }
 
+    function _createSavingAccountDummy(
+        address owner_,
+        uint256 initialDeposit,
+        uint256 startDate,
+        bytes memory identityHash
+    ) internal returns (bytes32, bytes32) {
+        _validateSavingBalance(initialDeposit);
+        require(
+            owner_ != address(0),
+            "GluwaSavingAccount: Saving owner address must be defined"
+        );
+
+        bytes32 accountHash_ = GluwaAccountModel.generateHash(
+            _savingAccountIndex.nextIdx,
+            startDate,
+            initialDeposit,
+            address(this),
+            owner_
+        );
+
+        _addressSavingAccountMapping[owner_] = GluwaAccountModel.SavingAccount({
+            idx: _savingAccountIndex.nextIdx,
+            accountHash: accountHash_,
+            owner: owner_,
+            balance: 0,
+            creationDate: startDate,
+            earning: 0,
+            state: GluwaAccountModel.AccountState.Active,
+            securityReferenceHash: identityHash
+        });
+       
+        _usedIdentityHash[identityHash] = true;
+        _savingAccountIndex.add(accountHash_);
+        _owners.push(owner_);
+
+        bytes32 depositHash = _deposit(owner_, initialDeposit, startDate, false);
+
+        emit AccountCreated(accountHash_, owner_);
+
+        return (accountHash_, depositHash);
+    }
     function _withdraw(
         address owner,
         address recipient,
