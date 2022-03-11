@@ -20,6 +20,7 @@ let abi;
 let iface;
 
 
+if(testHelper.LuniversetestActivate)
 // Start test block
 describe('Withdraw test', function () {
     before(async function () {

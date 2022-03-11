@@ -1,6 +1,6 @@
 const abi = require('./abi');
-const PLSASandBoxAddress = "0x0022684736f4ca57d37881d8093e4f97d28cb568";
-// const PLSASandBoxAddress = "0x1a610bd85991e08398101328d5cf29b41e318f40";
+const PLSASandBoxAddress = "0xe53f1c3d5eb19e6f393e510a1205d71a5a54272d";
+// const PLSASandBoxAddress = "0x0022684736f4ca57d37881d8093e4f97d28cb568";
 const privateKey = "***REMOVED***";
 const luniversePRC = "http://baas-rpc.luniverse.io:8545?lChainId=1635501961136826136";  
 const GluwaCoinAddress = "0x527C4222550b07aabF5Fe301aD88C5799E944Bf1";
@@ -21,13 +21,13 @@ async function LuniverseContractInstancelize(){
     var owner = new ethers.Wallet(privateKey,provider);
     gluwaCoin = await new ethers.Contract(GluwaCoinAddress, abi.Token, owner);
     prizeLinkedAccountVault = await new ethers.Contract(PLSASandBoxAddress, abi.PLSA, owner);
-    // input = await prizeLinkedAccountVault.populateTransaction.initialize(owner.address, gluwaCoin.address, standardInterestRate,
-    //   standardInterestRatePercentageBase, budget, ticketPerToken,
-    //   cutOffHour, cutOffMinute, processingCap, ticketRangeFactor, lowerLimitPercentage);
-    // receipt = await submitRawTxn(input, owner, ethers, provider);
+    input = await prizeLinkedAccountVault.populateTransaction.initialize(owner.address, gluwaCoin.address, standardInterestRate,
+      standardInterestRatePercentageBase, budget, ticketPerToken,
+      cutOffHour, cutOffMinute, processingCap, ticketRangeFactor, lowerLimitPercentage);
+    receipt = await submitRawTxn(input, owner, ethers, provider);
 
-    // input = await prizeLinkedAccountVault.populateTransaction.addOperator(owner.address);
-    // receipt = await submitRawTxn(input, owner, ethers, provider);
+    input = await prizeLinkedAccountVault.populateTransaction.addOperator(owner.address);
+    receipt = await submitRawTxn(input, owner, ethers, provider);
     input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
         standardInterestRate,
       standardInterestRatePercentageBase, budget, ticketPerToken,1,
@@ -128,7 +128,7 @@ const ticketPerToken = 1;
 const processingCap = 110;
 
 const errorOnlyAdmin = "Restricted to Admins.";
-
+const LuniversetestActivate = false;// set true to enable Luniverse test
 
 module.exports = {
     getTimeFromTimestamp, createWallets,
@@ -139,5 +139,5 @@ module.exports = {
     name, symbol, decimals,
     lowerLimitPercentage, standardInterestRate, standardInterestRatePercentageBase, cutOffHour, cutOffMinute, ticketRangeFactor,
     decimalsVal, budget, ticketPerToken, processingCap,
-    errorOnlyAdmin, LuniverseContractInstancelize
+    errorOnlyAdmin, LuniverseContractInstancelize, LuniversetestActivate
 }

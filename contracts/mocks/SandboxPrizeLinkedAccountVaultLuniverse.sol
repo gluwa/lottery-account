@@ -1,8 +1,8 @@
 pragma solidity ^0.5.0;
 
-import "./PrizeLinkedAccountVaultMock.sol";
+import "./PrizeLinkedAccountVaultLuniverse.sol";
 
-contract SandboxPrizeLinkedAccountVault is PrizeLinkedAccountVaultMock {   
+contract SandboxPrizeLinkedAccountVaultLuniverse is PrizeLinkedAccountVaultLuniverse {   
 
     function makeDrawV1_Dummy(uint256 drawTimeStamp, uint256 seed)
         external
