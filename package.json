@@ -1,4 +1,32 @@
 {
+  "name": "prize-linked-account",
+  "version": "1.0.0",
+  "description": "Prize Linked Account for sUSDC-G holders.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gluwa/prize-linked-account.git"
+  },
+  "keywords": [
+    "Gluwa",
+    "Prize",
+    "Linked",
+    "Account",
+    "Sidechain",
+    "sUSDC-G",
+    "Ethereum",
+    "ERC-20",
+    "Smart",
+    "Contract"
+  ],
+  "author": "Gluwa, Inc.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/gluwa/prize-linked-account/issues"
+  },
+  "homepage": "https://github.com/gluwa/prize-linked-account#readme",
+  "scripts": {
+    "test": "npx hardhat test"
+  },
   "dependencies": {
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^2.4.0",
