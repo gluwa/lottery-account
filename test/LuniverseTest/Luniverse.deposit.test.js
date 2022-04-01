@@ -61,7 +61,6 @@ describe('Deposit test', function () {
         }catch(err){}
       }    
       depositHash = event.args[0];
-      console.log(depositHash)
       expect(depositHash).to.not.equal(lasthash);
       lasthash = depositHash;
     }
@@ -84,7 +83,6 @@ describe('Deposit test', function () {
         }catch(err){}
       }    
       depositHash = event.args[0];
-      console.log(depositHash)
       expect(depositHash).to.not.equal(lasthash);
       lasthash = depositHash;
     }

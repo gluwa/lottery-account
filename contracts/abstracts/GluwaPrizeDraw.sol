@@ -18,8 +18,12 @@ contract GluwaPrizeDraw is Initializable, Context {
     SimpleIndex.Index private _drawTicketIndex;
     uint8 private _cutOffHour; //Hour 0-23, to ensure 24 hour before the drawdate
     uint8 private _cutOffMinute; //Minute 0-59, to ensure 24 hour before the drawdate
+    uint8 internal _tokenDecimal;
+    uint16 internal _winningChanceFactor;
+    uint64 internal _ticketPerToken;
     uint128 internal _ticketRangeFactor; // Factor to ensure the chance 2 userss tickets in a draw overlapping each other is very low
     uint256 internal _totalPrizeBroughForward;
+
     mapping(uint256 => DrawTicketModel.DrawTicket) internal _tickets;
     mapping(uint256 => uint96[]) internal _drawTicketMapping;
     mapping(uint256 => uint256) internal _drawTicketCurrentUpper;
@@ -30,6 +34,7 @@ contract GluwaPrizeDraw is Initializable, Context {
     mapping(uint256 => address[]) internal _drawParticipant;
     mapping(uint256 => uint256) internal _drawWinner;
     mapping(uint256 => uint256) internal _balanceEachDraw;
+    mapping(uint256 => uint256) internal _removedTicketsEachDraw;
     mapping(uint256 => bool) internal _prizePayingStatus;
 
     event TicketCreated(
@@ -43,34 +48,42 @@ contract GluwaPrizeDraw is Initializable, Context {
     function __GluwaPrizeDraw_init_unchained(
         uint8 cutOffHour,
         uint8 cutOffMinute,
-        uint128 ticketRangeFactor
+        uint8 tokenDecimal,
+        uint16 winningChanceFactor,
+        uint64 ticketPerToken
     ) internal initializer {
         _cutOffHour = cutOffHour;
         _cutOffMinute = cutOffMinute;
-        _ticketRangeFactor = ticketRangeFactor;
+        _tokenDecimal = tokenDecimal;
+        _winningChanceFactor = winningChanceFactor;
+        _ticketPerToken = ticketPerToken;
+        _ticketRangeFactor = 1;
         _drawTicketIndex = SimpleIndex.Index({nextIdx: 1});
     }
 
     function _setGluwaPrizeDrawSettings(
         uint8 cutOffHour,
         uint8 cutOffMinute,
+        uint16 winningChanceFactor,
         uint128 ticketRangeFactor
     ) internal {
         _cutOffHour = cutOffHour;
         _cutOffMinute = cutOffMinute;
+        _winningChanceFactor = winningChanceFactor;
         _ticketRangeFactor = ticketRangeFactor;
     }
 
-    function _getGluwaPrizeDrawSettings()
-        internal
+    function getGluwaPrizeDrawSettings()
+        public
         view
         returns (
             uint8,
             uint8,
+            uint16,
             uint128
         )
     {
-        return (_cutOffHour, _cutOffMinute, _ticketRangeFactor);
+        return (_cutOffHour, _cutOffMinute, _winningChanceFactor, _ticketRangeFactor);
     }
 
     function _randomNumber(
@@ -100,8 +113,12 @@ contract GluwaPrizeDraw is Initializable, Context {
         returns (uint256 min, uint256 max)
     {
         uint96[] storage drawTickets = _drawTicketMapping[drawTimeStamp];
-        require(drawTickets.length >0,"No Participant at this time");
-        max = _tickets[drawTickets[drawTickets.length - 1]].upper;
+        require(drawTickets.length > 0, "No Participant at this time");
+        max =
+            _tickets[drawTickets[drawTickets.length - 1]].upper +
+            (_winningChanceFactor *
+            _convertDepositToTotalTicket(_balanceEachDraw[drawTimeStamp]))
+            - _removedTicketsEachDraw[drawTimeStamp];
         min = _tickets[drawTickets[0]].lower;
     }
 
@@ -220,7 +237,8 @@ contract GluwaPrizeDraw is Initializable, Context {
         identifier_ |= uint256(ticketId) << 160;
         uint256 ticketLower = _ticketRangeFactor +
             _drawTicketCurrentUpper[drawTimeStamp];
-        uint256 ticketUpper = ticketLower + issuedTicket;
+        ///@dev ticket range's upper and lower are inclusive
+        uint256 ticketUpper = ticketLower + issuedTicket - 1;
         _tickets[ticketId] = DrawTicketModel.DrawTicket({
             identifier: identifier_,
             lower: ticketLower,
@@ -262,16 +280,19 @@ contract GluwaPrizeDraw is Initializable, Context {
                     _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
                         .upper -
                     _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
-                        .lower;
+                        .lower +
+                    1;
                 if (ticketsToRemove > issuedTickets) {
                     ticketsToRemove = ticketsToRemove - issuedTickets;
                     _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
-                        .upper = _tickets[
+                        .lower = _tickets[
                         _drawParticipantTicket[drawTimeStamp][owner_][i]
-                    ].lower;
+                    ].upper;
+                    _removedTicketsEachDraw[drawTimeStamp] += issuedTickets;
                 } else {
                     _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
-                        .upper -= ticketsToRemove;
+                        .lower += ticketsToRemove;
+                    _removedTicketsEachDraw[drawTimeStamp] += ticketsToRemove;
                     break;
                 }
             }
@@ -314,7 +335,8 @@ contract GluwaPrizeDraw is Initializable, Context {
     }
 
     function _getTickerIdsByOwnerAndDraw(uint256 drawTimeStamp, address owner)
-        internal view
+        internal
+        view
         returns (uint96[] memory)
     {
         return _drawParticipantTicket[drawTimeStamp][owner];
@@ -338,6 +360,14 @@ contract GluwaPrizeDraw is Initializable, Context {
 
     function getAmountBroughtToNextDraw() public view returns (uint256) {
         return _totalPrizeBroughForward;
+    }
+
+    function _convertDepositToTotalTicket(uint256 amount)
+        internal
+        view
+        returns (uint256)
+    {
+        return (amount * _ticketPerToken) / (10**uint256(_tokenDecimal));
     }
 
     uint256[50] private __gap;

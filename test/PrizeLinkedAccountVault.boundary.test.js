@@ -66,15 +66,14 @@ describe('Boundary test for drawing and ticket issuance', function () {
       1: ticket_owner,
       2: ticket_lower,
       3: ticket_upper } = (await prizeLinkedAccountVault.getTicketRangeById(ticketId));
-      console.info(ticket_upper);
 
-    expect(upper).to.equal(ticket_upper);
-    expect(lower).to.equal(ticket_lower);
+    expect(upper.toBigInt()).to.equal(ticket_upper);
+    expect(lower.toBigInt()).to.equal(ticket_lower);
     expect(owner).to.equal(ticket_owner);
     expect(owner).to.equal(user1.address);
 
-    expect(testHelper.getTimeFromTimestamp(drawDate)).to.equal("17:00:00");   
-    var range = BigInt(upper) - BigInt(lower);
+    expect(testHelper.getTimeFromTimestamp(drawDate.toNumber())).to.equal("17:00:00");   
+    var range = upper.toBigInt() - lower.toBigInt() + BigInt(1);
     expect(range).to.equal((large_depositAmount / decimalsVal));
 
   });
@@ -104,10 +103,11 @@ describe('Boundary test for drawing and ticket issuance', function () {
       var lower = ticketEvent[3];
       var upper = ticketEvent[4];
 
-      var range = BigInt(upper) - BigInt(lower);
+      var range = upper.toBigInt() - lower.toBigInt()+ BigInt(1);
       expect(range).to.equal((depositAmount / decimalsVal));
       expect(owner).to.equal(temp.address);
-      expect(testHelper.getTimeFromTimestamp(drawDate)).to.equal("17:00:00");
+      console.info(drawDate);
+      expect(testHelper.getTimeFromTimestamp(drawDate.toNumber())).to.equal("17:00:00");
 
     }
 
@@ -175,10 +175,6 @@ describe('Boundary test for drawing and ticket issuance', function () {
 
       var drawDateTemp = ticketEvent[0];
 
-      // console.info(ticketEvent[2]);
-
-      // console.info(ticketEvent[3]);
-      // console.info(ticketEvent[4]);
       if (drawDate == BigInt(0)) {
         drawDate = drawDateTemp;
       }

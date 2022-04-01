@@ -15,11 +15,9 @@ contract PrizeLinkedAccountVault is
 
     using DateTimeModel for DateTimeModel;
 
-    uint8 internal _lowerLimitPercentage;
-    uint8 internal _tokenDecimal;
     uint16 private _processingCap;
-    uint64 private _ticketPerToken;
     uint256 private _boostingFund;
+    uint8 internal _lowerLimitPercentage;
 
     function initialize(
         address admin,
@@ -31,7 +29,7 @@ contract PrizeLinkedAccountVault is
         uint8 cutOffHour,
         uint8 cutOffMinute,
         uint16 processingCap,
-        uint128 ticketRangeFactor,
+        uint16 winningChanceFactor,
         uint8 lowerLimitPercentage
     ) external initializer {
         __VaultControl_Init(admin);
@@ -44,11 +42,11 @@ contract PrizeLinkedAccountVault is
         __GluwaPrizeDraw_init_unchained(
             cutOffHour,
             cutOffMinute,
-            ticketRangeFactor
+            _token.decimals(),
+            winningChanceFactor,
+            ticketPerToken
         );
-        _processingCap = processingCap;
-        _tokenDecimal = _token.decimals();
-        _ticketPerToken = ticketPerToken;
+        _processingCap = processingCap;   
         _lowerLimitPercentage = lowerLimitPercentage;
     }
 
@@ -202,19 +200,11 @@ contract PrizeLinkedAccountVault is
         uint256 next2ndDraw = _calculateDrawTime(now);
         uint256 nextDraw = next2ndDraw - 86400;
         _removeTicket(owner, next2ndDraw, amount, newIssued);
-        if (_drawParticipantTicket[nextDraw][owner].length > 0) {
+        if (_drawParticipantTicket[nextDraw][owner].length > 0 && _drawWinner[nextDraw] == 0) {
             _removeTicket(owner, nextDraw, amount, newIssued);
         }
         return true;
-    }
-
-    function _convertDepositToTotalTicket(uint256 amount)
-        private
-        view
-        returns (uint256)
-    {
-        return (amount * _ticketPerToken) / (10**uint256(_tokenDecimal));
-    }
+    }   
 
     function getEligibleAddressPendingAddedToDraw(uint256 drawTimeStamp)
         external
@@ -251,7 +241,8 @@ contract PrizeLinkedAccountVault is
     }
 
     function regenerateTicketForNextDraw(uint256 drawTimeStamp)
-        external onlyOperator
+        external
+        onlyOperator
         returns (uint256)
     {
         uint32 processed;
@@ -347,6 +338,7 @@ contract PrizeLinkedAccountVault is
         uint8 cutOffHour,
         uint8 cutOffMinute,
         uint16 processingCap,
+        uint16 winningChanceFactor,
         uint128 ticketRangeFactor,
         uint8 lowerLimitPercentage
     ) external onlyOperator {
@@ -359,42 +351,26 @@ contract PrizeLinkedAccountVault is
             budget,
             minimumDeposit
         );
-        _setGluwaPrizeDrawSettings(cutOffHour, cutOffMinute, ticketRangeFactor);
+        _setGluwaPrizeDrawSettings(
+            cutOffHour,
+            cutOffMinute,
+            winningChanceFactor,
+            ticketRangeFactor
+        );
     }
 
     function getPrizeLinkedAccountSettings()
         external
         view
-        returns (
-            uint32 standardInterestRate,
-            uint32 standardInterestRatePercentageBase,
-            uint256 budget,
-            uint256 minimumDeposit,
-            IERC20 token,
-            uint64 ticketPerToken,
-            uint8 cutOffHour,
-            uint8 cutOffMinute,
-            uint16 processingCap,
-            uint128 ticketRangeFactor,
+        returns (            
+            uint64 ticketPerToken,           
+            uint16 processingCap,            
             uint8 lowerLimitPercentage
         )
     {
         ticketPerToken = _ticketPerToken;
         processingCap = _processingCap;
-        lowerLimitPercentage = _lowerLimitPercentage;
-        (
-            standardInterestRate,
-            standardInterestRatePercentageBase,
-            budget,
-            minimumDeposit,
-            token
-        ) = getSavingSettings();
-
-        (
-            cutOffHour,
-            cutOffMinute,
-            ticketRangeFactor
-        ) = _getGluwaPrizeDrawSettings();
+        lowerLimitPercentage = _lowerLimitPercentage;        
     }
 
     function getSavingAcountFor(address owner)
