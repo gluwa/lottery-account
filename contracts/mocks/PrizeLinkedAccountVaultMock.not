@@ -15,11 +15,11 @@ contract PrizeLinkedAccountVaultMock is
 
     using DateTimeModel for DateTimeModel;
 
-    uint8 internal _lowerLimitPercentage;
-    uint8 internal _tokenDecimal;
     uint16 private _processingCap;
     uint64 private _ticketPerToken;
     uint256 private _boostingFund;
+    uint8 internal _lowerLimitPercentage;
+    uint8 internal _tokenDecimal;
 
     function initialize(
         address admin,
@@ -31,7 +31,7 @@ contract PrizeLinkedAccountVaultMock is
         uint8 cutOffHour,
         uint8 cutOffMinute,
         uint16 processingCap,
-        uint128 ticketRangeFactor,
+        uint16 winningChanceFactor,
         uint8 lowerLimitPercentage
     ) external initializer {
         __VaultControl_Init(admin);
@@ -44,7 +44,7 @@ contract PrizeLinkedAccountVaultMock is
         __GluwaPrizeDraw_init_unchained(
             cutOffHour,
             cutOffMinute,
-            ticketRangeFactor
+            winningChanceFactor
         );
         _processingCap = processingCap;
         _tokenDecimal = _token.decimals();
@@ -251,7 +251,8 @@ contract PrizeLinkedAccountVaultMock is
     }
 
     function regenerateTicketForNextDraw(uint256 drawTimeStamp)
-        external onlyOperator
+        external
+        onlyOperator
         returns (uint256)
     {
         uint32 processed;
@@ -347,6 +348,7 @@ contract PrizeLinkedAccountVaultMock is
         uint8 cutOffHour,
         uint8 cutOffMinute,
         uint16 processingCap,
+        uint16 winningChanceFactor,
         uint128 ticketRangeFactor,
         uint8 lowerLimitPercentage
     ) external onlyOperator {
@@ -359,7 +361,7 @@ contract PrizeLinkedAccountVaultMock is
             budget,
             minimumDeposit
         );
-        _setGluwaPrizeDrawSettings(cutOffHour, cutOffMinute, ticketRangeFactor);
+        _setGluwaPrizeDrawSettings(cutOffHour, cutOffMinute, winningChanceFactor, ticketRangeFactor);
     }
 
     function getPrizeLinkedAccountSettings()
@@ -447,3 +449,4 @@ contract PrizeLinkedAccountVaultMock is
 
     uint256[50] private __gap;
 }
+

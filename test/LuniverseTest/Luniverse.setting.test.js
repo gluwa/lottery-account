@@ -71,6 +71,7 @@ describe('Gluwacoin', function () {
       9: ticketRangeFactor_1,
       10: lowerLimitPercentage_1
     } = await prizeLinkedAccountVault.getPrizeLinkedAccountSettings();
+    
     expect(standardInterestRate_1).to.equal(testHelper.standardInterestRate);
     expect(standardInterestRatePercentageBase_1).to.equal(testHelper.standardInterestRatePercentageBase);
     expect(budget_1).to.equal(testHelper.budget);

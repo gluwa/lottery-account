@@ -43,6 +43,7 @@ describe('Ticket Reissuance', function () {
       testHelper.cutOffHour,
       testHelper.cutOffMinute,
       processingCap,
+      0,
       1,
       testHelper.lowerLimitPercentage
     );

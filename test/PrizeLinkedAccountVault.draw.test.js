@@ -99,11 +99,10 @@ describe('Prize Draw', function () {
       upper = ticketEvent[4];
 
     }
-
-
     var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
-
-    expect(upper).to.equal(max);
+  
+    var upperFactored = BigInt(upper) + (depositAmount * BigInt(testHelper.winningChanceFactor * 10)) / BigInt(10**18);
+    expect(upperFactored).to.equal(max);
     expect(lower).to.equal(min);
 
   });
@@ -222,6 +221,19 @@ describe('Prize Draw', function () {
   });
 
   it('verify winner account after drawing', async function () {
+    await prizeLinkedAccountVault.setPrizeLinkedAccountSettings(
+      testHelper.standardInterestRate,
+      testHelper.standardInterestRatePercentageBase,
+      testHelper.budget,
+      1,
+      1,
+      testHelper.cutOffHour,
+      testHelper.cutOffMinute,
+      testHelper.processingCap,
+      0,
+      1,
+      testHelper.lowerLimitPercentage
+    );
     var totalInDraw = 0;
     var drawDate = BigInt(0);
     for (var i = 0; i < 30; i++) {
@@ -285,7 +297,7 @@ describe('Prize Draw', function () {
       6: savingAccount_state1,
       7: savingAccount_securityReferenceHash1 } = (await prizeLinkedAccountVault.getSavingAcountFor(winner));
 
-
+ 
     expect(winner).to.equal(winnerEvent[0]);
     expect(earnt).to.equal(winnerEvent[1]);
     expect(savingAccount_earning1).to.equal(winnerEvent[1]);
@@ -356,6 +368,7 @@ describe('Prize Draw', function () {
       testHelper.cutOffHour,
       testHelper.cutOffMinute,
       testHelper.processingCap,
+      0,
       1,
       testHelper.lowerLimitPercentage
     );
@@ -479,6 +492,7 @@ describe('Prize Draw', function () {
       testHelper.cutOffHour,
       testHelper.cutOffMinute,
       testHelper.processingCap,
+      testHelper.winningChanceFactor,
       1,
       testHelper.lowerLimitPercentage
     );

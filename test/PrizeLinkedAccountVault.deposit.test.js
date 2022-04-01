@@ -39,21 +39,6 @@ describe('Deposit test', function () {
     const result = (await prizeLinkedAccountVault.callStatic["createPrizedLinkAccount(address,uint256,bytes)"](user1.address, depositAmount, user1.address));
     expect(result).to.equal(true);
   });
-  it('accountHash should be different even with same user same amount', async function () {
-    var lastHash;
-    await gluwaCoin.connect(user1).approve(prizeLinkedAccountVault.address, depositAmount * BigInt(10));
-    for(var i=0;i<10;i++){
-      txn = await prizeLinkedAccountVault["createPrizedLinkAccountDummy(address,uint256,bytes)"](user1.address, depositAmount / BigInt(2), user1.address);
-      // txn = await testHelper.depositPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount);
-      receipt = await txn.wait();
-      var accountHash = receipt.events.filter(function (one) {
-        return one.event == "AccountCreated";
-      })[0].args[0];
-      expect(accountHash).to.not.equal(lastHash);
-      lastHash = accountHash;
-    }
-
-  });
 
   it('depositHash should be different even with same user same amount', async function () {
     await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount / BigInt(2), user1.address);
@@ -92,6 +77,8 @@ describe('Deposit test', function () {
     expect(savingAccount_owner).to.equal(user1.address);
     expect(savingAccount_state).to.equal(testHelper.ACCOUNT_ACTIVE_STAGE);
     expect(savingAccount_balance).to.equal(depositAmount);
+    console.info("check point");
+
 
     var ticketEvent = receipt.events.filter(function (one) {
       return one.event == "TicketCreated";
@@ -110,22 +97,27 @@ describe('Deposit test', function () {
       4: deposit_amount } = (await prizeLinkedAccountVault.getDeposit(depositHash));
 
 
-    expect(testHelper.getTimeFromTimestamp(drawDate)).to.equal("17:00:00");
-    var timeStampDiff = drawDate - parseInt(deposit_creationDate);
+    expect(testHelper.getTimeFromTimestamp(drawDate.toNumber())).to.equal("17:00:00");
+    var timeStampDiff = drawDate.toNumber() - parseInt(deposit_creationDate);
     expect(timeStampDiff).to.greaterThan(testHelper.TOTAL_SECONDS_PER_DAY);
     expect(2 * testHelper.TOTAL_SECONDS_PER_DAY).to.greaterThan(timeStampDiff);
 
-    var range = BigInt(upper) - BigInt(lower);
+    console.info("check point");
+
+    var c_upper = upper.toBigInt();
+    var c_lower = lower.toBigInt();
+    var range = c_upper - c_lower + BigInt(1);
     expect(range).to.equal((depositAmount / testHelper.decimalsVal));
-    expect(deposit_amount).to.equal(depositAmount);
+    expect(deposit_amount.toBigInt()).to.equal(depositAmount);
 
     const { 0: ticket_idx,
       1: ticket_owner,
       2: ticket_lower,
       3: ticket_upper } = (await prizeLinkedAccountVault.getTicketRangeById(ticketId));
 
-    expect(upper).to.equal(ticket_upper);
-    expect(lower).to.equal(ticket_lower);
+    console.info("check point");
+    expect(c_upper).to.equal(ticket_upper);
+    expect(c_lower).to.equal(ticket_lower);
     expect(owner).to.equal(ticket_owner);
     expect(owner).to.equal(user1.address);
 

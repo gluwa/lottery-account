@@ -19,7 +19,7 @@ var gluwaCoin2;
 
 
 // Start test block
-describe('Gluwacoin', function () {
+describe('PLSA Vault Setting Checks', function () {
   before(async function () {
     [owner, user1, bank1, bank2, user2, user3, lender] = await ethers.getSigners();
   });
@@ -40,30 +40,38 @@ describe('Gluwacoin', function () {
       testHelper.cutOffHour,
       testHelper.cutOffMinute,
       testHelper.processingCap,
+      testHelper.winningChanceFactor,
       1,
       testHelper.lowerLimitPercentage
     );
-
+    
+    const {      
+      0: ticketPerToken_1,    
+      1: processingCap_1,     
+      2: lowerLimitPercentage_1
+    } = await prizeLinkedAccountVault.getPrizeLinkedAccountSettings();
 
     const {
       0: standardInterestRate_1,
       1: standardInterestRatePercentageBase_1,
       2: budget_1,
       3: minimumDeposit_1,
-      4: token_1,
-      5: ticketPerToken_1,
-      6: cutOffHour_1,
-      7: cutOffMinute_1,
-      8: processingCap_1,
-      9: ticketRangeFactor_1,
-      10: lowerLimitPercentage_1
-    } = await prizeLinkedAccountVault.getPrizeLinkedAccountSettings();
+      4: token_1      
+    } = await prizeLinkedAccountVault.getSavingSettings();
+
+    const {      
+      0: cutOffHour_1,
+      1: cutOffMinute_1,
+      2: winningChanceFactor_1,
+      3: ticketRangeFactor_1
+    } = await prizeLinkedAccountVault.getGluwaPrizeDrawSettings();
 
     expect(standardInterestRate_1).to.equal(testHelper.standardInterestRate);
     expect(standardInterestRatePercentageBase_1).to.equal(testHelper.standardInterestRatePercentageBase);
     expect(budget_1).to.equal(testHelper.budget);
     expect(minimumDeposit_1).to.equal(1);
     expect(token_1).to.equal(gluwaCoin.address);
+    expect(winningChanceFactor_1).to.equal(testHelper.winningChanceFactor);
     expect(ticketPerToken_1).to.equal(1);
     expect(cutOffHour_1).to.equal(testHelper.cutOffHour);
     expect(cutOffMinute_1).to.equal(testHelper.cutOffMinute);
@@ -83,6 +91,7 @@ describe('Gluwacoin', function () {
     const cutOffHour_0 = 11;
     const cutOffMinute_0 = 22;
     const processingCap_0 = 212;
+    const winningChanceFactor_0 = 15;
     const ticketRangeFactor_0 = 3;
     const lowerLimitPercentage_0 = 51;
 
@@ -96,23 +105,31 @@ describe('Gluwacoin', function () {
       cutOffHour_0,
       cutOffMinute_0,
       processingCap_0,
+      winningChanceFactor_0,
       ticketRangeFactor_0,
       lowerLimitPercentage_0
     );
+
+    const {      
+      0: ticketPerToken_1,    
+      1: processingCap_1,     
+      2: lowerLimitPercentage_1
+    } = await prizeLinkedAccountVault.getPrizeLinkedAccountSettings();
 
     const {
       0: standardInterestRate_1,
       1: standardInterestRatePercentageBase_1,
       2: budget_1,
       3: minimumDeposit_1,
-      4: token_1,
-      5: ticketPerToken_1,
-      6: cutOffHour_1,
-      7: cutOffMinute_1,
-      8: processingCap_1,
-      9: ticketRangeFactor_1,
-      10: lowerLimitPercentage_1
-    } = await prizeLinkedAccountVault.getPrizeLinkedAccountSettings();
+      4: token_1      
+    } = await prizeLinkedAccountVault.getSavingSettings();
+
+    const {      
+      0: cutOffHour_1,
+      1: cutOffMinute_1,
+      2: winningChanceFactor_1,
+      3: ticketRangeFactor_1
+    } = await prizeLinkedAccountVault.getGluwaPrizeDrawSettings();
 
     expect(standardInterestRate_1).to.equal(standardInterestRate_0);
     expect(standardInterestRatePercentageBase_1).to.equal(standardInterestRatePercentageBase_0);
@@ -123,6 +140,7 @@ describe('Gluwacoin', function () {
     expect(cutOffHour_1).to.equal(cutOffHour_0);
     expect(cutOffMinute_1).to.equal(cutOffMinute_0);
     expect(processingCap_1).to.equal(processingCap_0);
+    expect(winningChanceFactor_1).to.equal(winningChanceFactor_0);
     expect(ticketRangeFactor_1).to.equal(ticketRangeFactor_0);
     expect(lowerLimitPercentage_1).to.equal(lowerLimitPercentage_0);
   });
