@@ -317,6 +317,16 @@ describe('Withdraw test', function () {
         ticketRemoved2 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate2);
         expect(ticketRemoved1).to.equal(BigInt(depositAmount * BigInt(2) / BigInt(10 ** 18)));
         expect(ticketRemoved2).to.equal(BigInt(depositAmount * BigInt(5) / BigInt(10 ** 18)));
+
+        var { 0: min1, 1: max1 } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate1);
+        var balance1 = await prizeLinkedAccountVault.getBalanceEachDraw(drawDate1);
+        expect(balance1).to.equal(BigInt(depositAmount * BigInt(8)));
+        expect(balance1.toBigInt() * (BigInt(1 + testHelper.winningChanceFactor))/BigInt(10 ** 18)).to.equal(max1);
+
+        var { 0: min2, 1: max2 } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate2);
+        var balance2 = await prizeLinkedAccountVault.getBalanceEachDraw(drawDate2);
+        expect(balance2).to.equal(BigInt(depositAmount * BigInt(20)));
+        expect(balance2.toBigInt() * (BigInt(1 + testHelper.winningChanceFactor))/BigInt(10 ** 18)).to.equal(max2);
     });
 
     it('verify number of tickets removed for draw when withdrawing after ticket reissuance', async function () {
@@ -371,9 +381,13 @@ describe('Withdraw test', function () {
 
         await prizeLinkedAccountVault.regenerateTicketForNextDraw(drawDate2);
 
+        var { 0: min1, 1: max1 } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate1);
+        var balance1 = await prizeLinkedAccountVault.getBalanceEachDraw(drawDate1);
         var ticketRemoved1 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate1);
         var ticketRemoved2 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate2);
         expect(ticketRemoved1).to.equal(BigInt(depositAmount * BigInt(2) / BigInt(10 ** 18)));
+        expect(balance1).to.equal(BigInt(depositAmount * BigInt(8)));
+        expect(balance1.toBigInt() * (BigInt(1 + testHelper.winningChanceFactor))/BigInt(10 ** 18)).to.equal(max1);
         expect(ticketRemoved2).to.equal(0);
 
        
@@ -389,6 +403,15 @@ describe('Withdraw test', function () {
         ticketRemoved2 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate2);
         expect(ticketRemoved1).to.equal(BigInt(depositAmount * BigInt(2) / BigInt(10 ** 18)));
         expect(ticketRemoved2).to.equal(BigInt(depositAmount * BigInt(3) / BigInt(10 ** 18)));
+
+        balance1 = await prizeLinkedAccountVault.getBalanceEachDraw(drawDate1);      
+        expect(balance1).to.equal(BigInt(depositAmount * BigInt(8)));
+        expect(balance1.toBigInt() * (BigInt(1 + testHelper.winningChanceFactor))/BigInt(10 ** 18)).to.equal(max1);
+
+        var { 0: min2, 1: max2 } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate2);
+        var balance2 = await prizeLinkedAccountVault.getBalanceEachDraw(drawDate2);
+        expect(balance2).to.equal(BigInt(depositAmount * BigInt(20)));
+        expect(balance2.toBigInt() * (BigInt(1 + testHelper.winningChanceFactor))/BigInt(10 ** 18)).to.equal(max2);
     });
 
 });
