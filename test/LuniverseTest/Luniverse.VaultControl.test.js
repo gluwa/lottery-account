@@ -72,17 +72,17 @@ describe('Vault Control', function () {
 
    
 
-    renounceAdmin
-    luniverse can't test with admin renounce since it's a deployed contract
-    it('can new Admin renounce Admin?', async function () {
-        input = await prizeLinkedAccountVault.populateTransaction.addAdmin(user1.address);
-        res = await testHelper.submitRawTxn(input, owner, ethers, provider);
+    // renounceAdmin
+    // luniverse can't test with admin renounce since it's a deployed contract
+    // it('can new Admin renounce Admin?', async function () {
+    //     input = await prizeLinkedAccountVault.populateTransaction.addAdmin(user1.address);
+    //     res = await testHelper.submitRawTxn(input, owner, ethers, provider);
 
-        expect(res.status).to.equal(1);
-        input = await prizeLinkedAccountVault.populateTransaction. ();
-        res = await testHelper.submitRawTxn(input, user1, ethers, provider);
-        expect((await prizeLinkedAccountVault.isAdmin(user1.address))).to.equal(false);
-    });
+    //     expect(res.status).to.equal(1);
+    //     input = await prizeLinkedAccountVault.populateTransaction. ();
+    //     res = await testHelper.submitRawTxn(input, user1, ethers, provider);
+    //     expect((await prizeLinkedAccountVault.isAdmin(user1.address))).to.equal(false);
+    // });
     it('can non-Admin Operator renounce Admin?', async function () {
         input = await prizeLinkedAccountVault.populateTransaction.addOperator(user1.address);
         res = await testHelper.submitRawTxn(input, owner, ethers, provider);
@@ -94,7 +94,7 @@ describe('Vault Control', function () {
         expect((await prizeLinkedAccountVault.isAdmin(user1.address))).to.equal(false);
     });
 
-    isOperator
+    // isOperator
     it('is Operator initialized to the `ownerAddress`?', async function () {
         expect((await prizeLinkedAccountVault.isOperator(owner.address))).to.equal(true);
     });

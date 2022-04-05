@@ -38,12 +38,12 @@ async function LuniverseContractInstancelize(){
         
     // input = await prizeLinkedAccountVault.populateTransaction.addOperator(owner.address);
     // receipt = await submitRawTxn(input, owner, ethers, provider);
-    // input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
-    //     standardInterestRate,
-    //   standardInterestRatePercentageBase, budget, ticketPerToken,1,
-    //   cutOffHour, cutOffMinute, processingCap,winningChanceFactor, ticketRangeFactor, lowerLimitPercentage
-    //   );
-    // await submitRawTxn(input, owner, ethers, provider);
+    input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
+        standardInterestRate,
+      standardInterestRatePercentageBase, budget, ticketPerToken,1,
+      cutOffHour, cutOffMinute, processingCap,winningChanceFactor, ticketRangeFactor, lowerLimitPercentage
+      );
+    await submitRawTxn(input, owner, ethers, provider);
     return {gluwaCoin, prizeLinkedAccountVault, owner, provider}
 }
 async function setupContractTesting(owner, user1, user2, mintAmount, depositAmount) {
@@ -138,7 +138,7 @@ const ticketPerToken = 1;
 const processingCap = 110;
 const winningChanceFactor = 3;
 const errorOnlyAdmin = "Restricted to Admins.";
-const LuniversetestActivate = true;// set true to enable Luniverse test
+const LuniversetestActivate = false;// set true to enable Luniverse test
 
 module.exports = {
     getTimeFromTimestamp, createWallets,
