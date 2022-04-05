@@ -120,8 +120,7 @@ contract GluwacoinSavingAccount is Initializable, Context {
             _addressSavingAccountMapping[owner_].creationDate == 0,
             "GluwaSavingAccount: Each address should have only 1 Saving account only"
         );
-        require(
-            _usedIdentityHash[identityHash] == false,
+        require(!_usedIdentityHash[identityHash],
             "GluwaSavingAccount: Identity hash is already used"
         );
 
@@ -291,25 +290,6 @@ contract GluwacoinSavingAccount is Initializable, Context {
         _minimumDeposit = minimumDeposit;
     }
 
-    /**
-     * @dev calculate earning for given amount based on term and interest rate.
-            if interest rate is 15%, the interestRatePercentageBase is 100 and interestRate is 15
-            if interest rate is 15.5%, the interestRatePercentageBase is 1000 and interestRate is 155
-     */
-    function _calculateearning(
-        uint64 term,
-        uint32 interestRate,
-        uint32 interestRatePercentageBase,
-        uint256 amount
-    ) private pure returns (uint256) {
-        uint256 earning = amount
-            .mul(interestRate)
-            .div(interestRatePercentageBase)
-            .mul(term)
-            .div(31536000); /// @dev 365 days in seconds
-        return earning;
-    }
-
     function _validateSavingBalance(uint256 deposit) private view {
         require(
             deposit >= _minimumDeposit &&
@@ -317,6 +297,6 @@ contract GluwacoinSavingAccount is Initializable, Context {
             "GluwacoinSaving: the deposit must be >= min deposit & cannot make the total balance > the budget."
         );
     }
-
+    
     uint256[50] private __gap;
 }
