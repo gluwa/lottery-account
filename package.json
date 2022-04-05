@@ -31,6 +31,7 @@
     "@nomiclabs/hardhat-waffle": "^2.0.1",
     "@openzeppelin/contracts": "^2.4.0",
     "@openzeppelin/contracts-ethereum-package": "^3.0.0",
+    "hardhat-waffle": "^0.0.1-security",
     "mocha": "^7.2.0"
   },
   "devDependencies": {
