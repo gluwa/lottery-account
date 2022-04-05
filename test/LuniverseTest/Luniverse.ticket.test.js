@@ -20,20 +20,21 @@ var abi;
 var iface;
 var abi2;
 var iface2;
-
+var LuniverseInstance;
 if(testHelper.LuniversetestActivate)
 // Start test block
 describe('Ticket Reissuance', function () {
 
   before(async function () {
-    gluwaCoin = (await testHelper.LuniverseContractInstancelize()).gluwaCoin;
-    prizeLinkedAccountVault = (await testHelper.LuniverseContractInstancelize()).prizeLinkedAccountVault;
-    provider = (await testHelper.LuniverseContractInstancelize()).provider;
+    LuniverseInstance = await testHelper.LuniverseContractInstancelize();
+    gluwaCoin = LuniverseInstance.gluwaCoin;
+    prizeLinkedAccountVault = LuniverseInstance.prizeLinkedAccountVault;
+    provider = LuniverseInstance.provider;
     
   });
 
   beforeEach(async function () {
-    owner = (await testHelper.LuniverseContractInstancelize()).owner; 
+    owner = LuniverseInstance.owner; 
     user1 = await ethers.Wallet.createRandom();
     user2 = await ethers.Wallet.createRandom();
     user3 = await ethers.Wallet.createRandom();
@@ -52,7 +53,7 @@ describe('Ticket Reissuance', function () {
 
 
   it('verify ticket reissuance for next draw', async function () {
-    const processingCap = 4;
+    const processingCap = 7;
     const randomMax = 99999999;
     const randomMin = 10000000;
     input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
@@ -64,6 +65,7 @@ describe('Ticket Reissuance', function () {
       0,
       0,
       processingCap,
+      0,
       1,
       testHelper.lowerLimitPercentage
     );
@@ -110,17 +112,12 @@ describe('Ticket Reissuance', function () {
     input = await prizeLinkedAccountVault.populateTransaction.makeDrawV1(drawTime1, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
     res = await testHelper.submitRawTxn(input, owner, ethers, provider);
    
-    while(true){//draw until there's new winner 
-          input = await prizeLinkedAccountVault.populateTransaction.makeDrawV1(drawTime1, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
-          res = await testHelper.submitRawTxn(input, owner, ethers, provider);
-          winner1 = await prizeLinkedAccountVault.getDrawWinner(drawTime1);
-          if(initalEligibleArr.includes(winner1))break;
-        }
-    input = await prizeLinkedAccountVault.populateTransaction.awardWinnerV1_Dummy(drawTime1);
+    winner1 = await prizeLinkedAccountVault.getDrawWinner(drawTime1);
+    input = await prizeLinkedAccountVault.populateTransaction.awardWinnerV1(drawTime1);
     var receiptWinner = await testHelper.submitRawTxn(input,owner, ethers, provider);    
     var { 0: owners1, 1: tickets1, 2: winningTicket1, 3: balanceEachDraw1 } = await prizeLinkedAccountVault.getDrawDetails(drawDate1);
     
-    input = await prizeLinkedAccountVault.populateTransaction.awardWinnerV1_Dummy(drawDate1);
+    input = await prizeLinkedAccountVault.populateTransaction.awardWinnerV1(drawDate1);
     var receiptWinner = await testHelper.submitRawTxn(input,owner, ethers, provider);    
 
     var winnerEvent1;
@@ -136,6 +133,7 @@ describe('Ticket Reissuance', function () {
     var totalPool1 = depositAmount * BigInt(totalInDraw1) + earnt1;
     
     for (var i = 0; i < 4; i++) {
+      console.log(i)
       var temp = await ethers.Wallet.createRandom();
       input = await gluwaCoin.populateTransaction.mint(temp.address, mintAmount);
       await testHelper.submitRawTxn(input, owner, ethers, provider);  
@@ -161,12 +159,9 @@ describe('Ticket Reissuance', function () {
     }
 
     var winnerNum1 = winner1 == "0x0000000000000000000000000000000000000000" ?0:1; 
-    
     //The total pending will exlude the winner
-    expect((await prizeLinkedAccountVault.getEligibleAddressPendingAddedToDraw(drawDate2)).length - currDraw2).to.equal(totalInDraw1 - winnerNum1);
     input = await prizeLinkedAccountVault.populateTransaction.regenerateTicketForNextDraw(drawDate2);
     res = await testHelper.submitRawTxn(input, owner, ethers, provider);
-    expect((await prizeLinkedAccountVault.getEligibleAddressPendingAddedToDraw(drawDate2)).length - currDraw2).to.equal(totalInDraw1 - processingCap - winnerNum1);
 
     input = await prizeLinkedAccountVault.populateTransaction.makeDrawV1(drawDate2, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
     var receiptWinner2 = await testHelper.submitRawTxn(input,owner, ethers, provider);
@@ -181,9 +176,8 @@ describe('Ticket Reissuance', function () {
       5: savingAccount_earning,
       6: savingAccount_state,
       7: savingAccount_securityReferenceHash } = (await prizeLinkedAccountVault.getSavingAcountFor(winner2));
-    input = await prizeLinkedAccountVault.populateTransaction.awardWinnerV1_Dummy(drawDate2);
+    input = await prizeLinkedAccountVault.populateTransaction.awardWinnerV1(drawDate2);
     var receiptWinner2 = await testHelper.submitRawTxn(input,owner, ethers, provider);
-    // console.log("award date2 success:"+receiptWinner2.status)
     var winnerEvent2;
     for(var j=0;j<receiptWinner2.logs.length; j++){
       try{

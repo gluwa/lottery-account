@@ -1,9 +1,12 @@
 const abi = require('./abi');
-const PLSASandBoxAddress = "0xe53f1c3d5eb19e6f393e510a1205d71a5a54272d";
-// const PLSASandBoxAddress = "0x0022684736f4ca57d37881d8093e4f97d28cb568";
+// const PLSASandBoxAddress = "0x1b3a2f57ccefccf3712abbc0e6b5d2623a48aad8";//Test
+// const PLSASandBoxAddress = "0xc8113935a3a457fd9e9c3fd432d0b38308bf07ee";// local
+const PLSASandBoxAddress = "0x444194906b130916a5e569f45a4f6d1f10c8ceaf";// unit test for myself
+const operator = "0xfd91d059F0D0D5F6AdeE0f4Aa1FDF31da2557BC9";
 const privateKey = "ac407fa511df5105b17881936d07c9be43ed22fc5b80d676383fdaf31ffedb5e";
 const luniversePRC = "http://baas-rpc.luniverse.io:8545?lChainId=1635501961136826136";  
-const GluwaCoinAddress = "0x527C4222550b07aabF5Fe301aD88C5799E944Bf1";
+// const GluwaCoinAddress = "0xdbde880e1405a6914b387606933d7476a2296a06";// test env
+const GluwaCoinAddress = "0x527C4222550b07aabF5Fe301aD88C5799E944Bf1"; // unit test
 async function createWallets(numberOfWallet, etherFaucetAddress) {
     let wallets = [];
     for (var i = 0; i < numberOfWallet; i++) {
@@ -20,20 +23,27 @@ async function LuniverseContractInstancelize(){
     var provider = new ethers.providers.JsonRpcProvider(luniversePRC);
     var owner = new ethers.Wallet(privateKey,provider);
     gluwaCoin = await new ethers.Contract(GluwaCoinAddress, abi.Token, owner);
+    // console.log(owner.address);
     prizeLinkedAccountVault = await new ethers.Contract(PLSASandBoxAddress, abi.PLSA, owner);
-    input = await prizeLinkedAccountVault.populateTransaction.initialize(owner.address, gluwaCoin.address, standardInterestRate,
-      standardInterestRatePercentageBase, budget, ticketPerToken,
-      cutOffHour, cutOffMinute, processingCap, ticketRangeFactor, lowerLimitPercentage);
-    receipt = await submitRawTxn(input, owner, ethers, provider);
+    // input = await prizeLinkedAccountVault.populateTransaction.initialize(owner.address, gluwaCoin.address, standardInterestRate,
+    //   standardInterestRatePercentageBase, budget, ticketPerToken,
+    //   cutOffHour, cutOffMinute, processingCap, ticketRangeFactor, lowerLimitPercentage);
 
-    input = await prizeLinkedAccountVault.populateTransaction.addOperator(owner.address);
-    receipt = await submitRawTxn(input, owner, ethers, provider);
-    input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
-        standardInterestRate,
-      standardInterestRatePercentageBase, budget, ticketPerToken,1,
-      cutOffHour, cutOffMinute, processingCap, ticketRangeFactor, lowerLimitPercentage
-      );
-    await submitRawTxn(input, owner, ethers, provider);
+    // receipt = await submitRawTxn(input, owner, ethers, provider);
+    // console.log(receipt)
+    // input = await prizeLinkedAccountVault.populateTransaction.addAdmin(operator);
+    // receipt = await submitRawTxn(input, owner, ethers, provider);
+    // input = await prizeLinkedAccountVault.populateTransaction.addOperator(operator);
+    // receipt = await submitRawTxn(input, owner, ethers, provider);
+        
+    // input = await prizeLinkedAccountVault.populateTransaction.addOperator(owner.address);
+    // receipt = await submitRawTxn(input, owner, ethers, provider);
+    // input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
+    //     standardInterestRate,
+    //   standardInterestRatePercentageBase, budget, ticketPerToken,1,
+    //   cutOffHour, cutOffMinute, processingCap,winningChanceFactor, ticketRangeFactor, lowerLimitPercentage
+    //   );
+    // await submitRawTxn(input, owner, ethers, provider);
     return {gluwaCoin, prizeLinkedAccountVault, owner, provider}
 }
 async function setupContractTesting(owner, user1, user2, mintAmount, depositAmount) {
@@ -117,18 +127,18 @@ const name = 'Gluwacoin';
 const symbol = 'Gluwacoin';
 const decimals = 18;
 const lowerLimitPercentage = BigInt(30);
-const standardInterestRate = 15;
-const standardInterestRatePercentageBase = 100;
-const cutOffHour = 16;
+const standardInterestRate = 4;
+const standardInterestRatePercentageBase = 36500;
+const cutOffHour = 11;
 const cutOffMinute = 59;
 const ticketRangeFactor = 100;
 const decimalsVal = BigInt(10) ** BigInt(decimals);
 const budget = BigInt(20000000000) * decimalsVal;
 const ticketPerToken = 1;
 const processingCap = 110;
-
+const winningChanceFactor = 3;
 const errorOnlyAdmin = "Restricted to Admins.";
-const LuniversetestActivate = false;// set true to enable Luniverse test
+const LuniversetestActivate = true;// set true to enable Luniverse test
 
 module.exports = {
     getTimeFromTimestamp, createWallets,
@@ -138,6 +148,6 @@ module.exports = {
     ACCOUNT_ACTIVE_STAGE,
     name, symbol, decimals,
     lowerLimitPercentage, standardInterestRate, standardInterestRatePercentageBase, cutOffHour, cutOffMinute, ticketRangeFactor,
-    decimalsVal, budget, ticketPerToken, processingCap,
+    decimalsVal, budget, ticketPerToken, processingCap,winningChanceFactor,
     errorOnlyAdmin, LuniverseContractInstancelize, LuniversetestActivate
 }

@@ -67,19 +67,19 @@ describe('Vault Control', function () {
         res =  testHelper.submitRawTxn(input, owner, ethers, provider);
         input = await prizeLinkedAccountVault.connect(user1).populateTransaction.addAdmin(user2.address);
         res = await testHelper.submitRawTxn(input, user1, ethers, provider);
-        await expect(res.status).to.be.revertedWith(0);
+        await expect(res.status).to.equal(0);
     });
 
    
 
-    // renounceAdmin
-    // luniverse can't test with admin renounce since it's a deployed contract
+    renounceAdmin
+    luniverse can't test with admin renounce since it's a deployed contract
     it('can new Admin renounce Admin?', async function () {
         input = await prizeLinkedAccountVault.populateTransaction.addAdmin(user1.address);
         res = await testHelper.submitRawTxn(input, owner, ethers, provider);
 
         expect(res.status).to.equal(1);
-        input = await prizeLinkedAccountVault.populateTransaction.renounceAdmin();
+        input = await prizeLinkedAccountVault.populateTransaction. ();
         res = await testHelper.submitRawTxn(input, user1, ethers, provider);
         expect((await prizeLinkedAccountVault.isAdmin(user1.address))).to.equal(false);
     });
@@ -94,7 +94,7 @@ describe('Vault Control', function () {
         expect((await prizeLinkedAccountVault.isAdmin(user1.address))).to.equal(false);
     });
 
-    // isOperator
+    isOperator
     it('is Operator initialized to the `ownerAddress`?', async function () {
         expect((await prizeLinkedAccountVault.isOperator(owner.address))).to.equal(true);
     });
@@ -107,17 +107,16 @@ describe('Vault Control', function () {
     // addOperator
     it('can Admin add Operator?', async function () {
         input = await prizeLinkedAccountVault.populateTransaction.addOperator(user1.address);
-        res =  testHelper.submitRawTxn(input, owner, ethers, provider);
+        await testHelper.submitRawTxn(input, owner, ethers, provider);
         expect((await prizeLinkedAccountVault.isOperator(user1.address))).to.equal(true);
     });
 
     it('can new Admin add Operator?', async function () {
 
         input = await prizeLinkedAccountVault.populateTransaction.addAdmin(user1.address);
-        await testHelper.submitRawTxn(input, owner, ethers, provider);
+        res =await testHelper.submitRawTxn(input, owner, ethers, provider);
         input = await prizeLinkedAccountVault.connect(user1).populateTransaction.addOperator(user2.address);
-        await testHelper.submitRawTxn(input, user1, ethers, provider);
-
+        res = await testHelper.submitRawTxn(input, user1, ethers, provider);
         expect((await prizeLinkedAccountVault.isOperator(user2.address))).to.equal(true);
     });
 
