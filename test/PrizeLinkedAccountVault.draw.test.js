@@ -243,8 +243,26 @@ describe('Prize Draw', function () {
       testHelper.lowerLimitPercentage
     );
     var receipt = await setPrizeLinkedAccountSettingsTxn.wait();
-    expect(receipt.events.length).to.equal(1);
-    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "SettingsUpdated").withArgs(owner.address);
+    // expect(receipt.events.length).to.equal(2);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "AccountSavinSettingsUpdated").withArgs(
+      owner.address,
+      testHelper.standardInterestRate,
+      testHelper.standardInterestRatePercentageBase,
+      receipt.events[0].args['budget'],
+      1,
+      1
+    );
+    expect(BigInt(receipt.events[0].args['budget'])).to.equal(testHelper.budget);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "GluwaPrizeDrawSettingsUpdated").withArgs(
+      owner.address,
+      testHelper.cutOffHour,
+      testHelper.cutOffMinute,
+      testHelper.processingCap,
+      0,
+      1,
+      receipt.events[1].args['lowerLimitPercentage']
+    );
+    expect(BigInt(receipt.events[1].args['lowerLimitPercentage'])).to.equal(testHelper.lowerLimitPercentage);
 
     var totalInDraw = 0;
     var drawDate = BigInt(0);
@@ -278,9 +296,9 @@ describe('Prize Draw', function () {
     const randomMax = 99999999;
     const randomMin = 10000000;
     var makeDrawV1Txn = await prizeLinkedAccountVault.makeDrawV1(drawDate, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
-    var receipt = await makeDrawV1Txn.wait();
-    expect(receipt.events.length).to.equal(1);
-    await expect(makeDrawV1Txn).to.emit(prizeLinkedAccountVault, "DrawResult").withArgs(drawDate, receipt.events[0].args['winningTicket']);
+    var receipt2 = await makeDrawV1Txn.wait();
+    // expect(receipt2.events.length).to.equal(1);
+    await expect(makeDrawV1Txn).to.emit(prizeLinkedAccountVault, "DrawResult").withArgs(drawDate, receipt2.events[0].args['winningTicket']);
   
     var { 0: owners, 1: tickets, 2: winningTicket, 3: balanceEachDraw } = await prizeLinkedAccountVault.getDrawDetails(drawDate);
 
@@ -392,8 +410,26 @@ describe('Prize Draw', function () {
       testHelper.lowerLimitPercentage
     );
     var receipt = await setPrizeLinkedAccountSettingsTxn.wait();
-    expect(receipt.events.length).to.equal(1);
-    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "SettingsUpdated").withArgs(owner.address);
+    expect(receipt.events.length).to.equal(2);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "AccountSavinSettingsUpdated").withArgs(
+      owner.address,
+      testHelper.standardInterestRate,
+      testHelper.standardInterestRatePercentageBase,
+      receipt.events[0].args['budget'],
+      1,
+      1
+    );
+    expect(BigInt(receipt.events[0].args['budget'])).to.equal(testHelper.budget);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "GluwaPrizeDrawSettingsUpdated").withArgs(
+      owner.address,
+      testHelper.cutOffHour,
+      testHelper.cutOffMinute,
+      testHelper.processingCap,
+      0,
+      1,
+      receipt.events[1].args['lowerLimitPercentage']
+    );
+    expect(BigInt(receipt.events[1].args['lowerLimitPercentage'])).to.equal(testHelper.lowerLimitPercentage);
 
     var drawDate1 = BigInt(0);
     var depositTime1 = ((Date.now() / 1000) | 0) - testHelper.TOTAL_SECONDS_PER_DAY;
@@ -533,8 +569,26 @@ describe('Prize Draw', function () {
       testHelper.lowerLimitPercentage
     );
     var receipt = await setPrizeLinkedAccountSettingsTxn.wait();
-    expect(receipt.events.length).to.equal(1);
-    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "SettingsUpdated").withArgs(owner.address);
+    expect(receipt.events.length).to.equal(2);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "AccountSavinSettingsUpdated").withArgs(
+      owner.address,
+      testHelper.standardInterestRate,
+      testHelper.standardInterestRatePercentageBase,
+      receipt.events[0].args['budget'],
+      1,
+      1
+    );
+    expect(BigInt(receipt.events[0].args['budget'])).to.equal(testHelper.budget);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "GluwaPrizeDrawSettingsUpdated").withArgs(
+      owner.address,
+      testHelper.cutOffHour,
+      testHelper.cutOffMinute,
+      testHelper.processingCap,
+      testHelper.winningChanceFactor,
+      1,
+      receipt.events[1].args['lowerLimitPercentage']
+    );
+    expect(BigInt(receipt.events[1].args['lowerLimitPercentage'])).to.equal(testHelper.lowerLimitPercentage);
 
     var drawDate = BigInt(0);
     var depositTime = ((Date.now() / 1000) | 0) - testHelper.TOTAL_SECONDS_PER_DAY;

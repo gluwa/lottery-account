@@ -45,9 +45,26 @@ describe('PLSA Vault Setting Checks', function () {
       testHelper.lowerLimitPercentage
     );
     var receipt = await setPrizeLinkedAccountSettingsTxn.wait();
-    expect(receipt.events.length).to.equal(1);
-    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "SettingsUpdated").withArgs(owner.address);
-
+    expect(receipt.events.length).to.equal(2);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "AccountSavinSettingsUpdated").withArgs(
+      owner.address,
+      testHelper.standardInterestRate,
+      testHelper.standardInterestRatePercentageBase,
+      receipt.events[0].args['budget'],
+      1,
+      1
+    );
+    expect(BigInt(receipt.events[0].args['budget'])).to.equal(testHelper.budget);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "GluwaPrizeDrawSettingsUpdated").withArgs(
+      owner.address,
+      testHelper.cutOffHour,
+      testHelper.cutOffMinute,
+      testHelper.processingCap,
+      testHelper.winningChanceFactor,
+      1,
+      receipt.events[1].args['lowerLimitPercentage']
+    );
+    expect(BigInt(receipt.events[1].args['lowerLimitPercentage'])).to.equal(testHelper.lowerLimitPercentage);
     const {      
       0: ticketPerToken_1,    
       1: processingCap_1,     
@@ -113,9 +130,24 @@ describe('PLSA Vault Setting Checks', function () {
       lowerLimitPercentage_0
     );
     var receipt = await setPrizeLinkedAccountSettingsTxn.wait();
-    expect(receipt.events.length).to.equal(1);
-    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "SettingsUpdated").withArgs(owner.address);
-
+    expect(receipt.events.length).to.equal(2);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "AccountSavinSettingsUpdated").withArgs(
+      owner.address,
+      standardInterestRate_0,
+      standardInterestRatePercentageBase_0,
+      budget_0,
+      minimumDeposit_0,
+      ticketPerToken_0
+    );
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "GluwaPrizeDrawSettingsUpdated").withArgs(
+      owner.address,
+      cutOffHour_0,
+      cutOffMinute_0,
+      processingCap_0,
+      winningChanceFactor_0,
+      ticketRangeFactor_0,
+      lowerLimitPercentage_0
+    );
     const {      
       0: ticketPerToken_1,    
       1: processingCap_1,     
