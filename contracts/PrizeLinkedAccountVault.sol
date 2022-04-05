@@ -12,6 +12,11 @@ contract PrizeLinkedAccountVault is
 {
     event WinnerSelected(address winner, uint256 reward);
     event Invested(address indexed recipient, uint256 amount);
+    event DrawResult(uint256 indexed drawTimeStamp, uint256 winningTicket);
+    event TopUpBalance(address indexed recipient, uint256 amount);
+    event WithdrawBalance(address indexed recipient, uint256 amount);
+    event AccountSavinSettingsUpdated(address opperator, uint32 standardInterestRate, uint32 standardInterestRatePercentageBase, uint256 budget, uint256 minimumDeposit, uint64 ticketPerToken);
+    event GluwaPrizeDrawSettingsUpdated(address opperator, uint8 cutOffHour, uint8 cutOffMinute, uint16 processingCap, uint16 winningChanceFactor, uint128 ticketRangeFactor, uint8 lowerLimitPercentage);
 
     using DateTimeModel for DateTimeModel;
 
@@ -70,7 +75,7 @@ contract PrizeLinkedAccountVault is
             _totalPrizeBroughForward = 0;
             _depositPrizedLinkAccount(winner, prize, now, true);
         } else {
-            _totalPrizeBroughForward += prize;
+            _totalPrizeBroughForward = _totalPrizeBroughForward.add(prize);
         }
         emit WinnerSelected(winner, prize);
         return true;
@@ -90,7 +95,9 @@ contract PrizeLinkedAccountVault is
         assembly {
             mstore(add(temp, 32), xor(seed, sender))
         }
-        return _findDrawWinner(drawTimeStamp, temp);
+        uint256 drawWinner = _findDrawWinner(drawTimeStamp, temp);
+        emit DrawResult(drawTimeStamp, drawWinner);
+        return drawWinner;
     }
 
     function createPrizedLinkAccount(
@@ -98,17 +105,18 @@ contract PrizeLinkedAccountVault is
         uint256 amount,
         bytes calldata securityHash
     ) external onlyOperator returns (bool) {
-        require(
-            _token.transferFrom(owner, address(this), amount),
-            "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
-        );
         (, bytes32 depositHash) = _createSavingAccount(
             owner,
             amount,
             now,
             securityHash
         );
-        return _createPrizedLinkTickets(depositHash);
+        bool isSuccess = _createPrizedLinkTickets(depositHash);
+        require(
+            _token.transferFrom(owner, address(this), amount),
+            "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
+        );
+        return isSuccess;
     }
 
     function depositPrizedLinkAccount(address owner, uint256 amount)
@@ -116,11 +124,12 @@ contract PrizeLinkedAccountVault is
         onlyOperator
         returns (bool)
     {
+        bool isSuccess = _depositPrizedLinkAccount(owner, amount, now, false);
         require(
             _token.transferFrom(owner, address(this), amount),
             "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
         );
-        return _depositPrizedLinkAccount(owner, amount, now, false);
+        return isSuccess;
     }
 
     function _depositPrizedLinkAccount(
@@ -195,14 +204,14 @@ contract PrizeLinkedAccountVault is
         address recipient,
         uint256 amount
     ) internal returns (bool) {
-        _withdraw(owner, recipient, amount);
         uint256 newIssued = _convertDepositToTotalTicket(amount);
         uint256 next2ndDraw = _calculateDrawTime(now);
-        uint256 nextDraw = next2ndDraw - 86400;
+        uint256 nextDraw = next2ndDraw.sub(86400);
         _removeTicket(owner, next2ndDraw, amount, newIssued);
         if (_drawParticipantTicket[nextDraw][owner].length > 0 && _drawWinner[nextDraw] == 0) {
             _removeTicket(owner, nextDraw, amount, newIssued);
         }
+        _withdraw(owner, recipient, amount);
         return true;
     }   
 
@@ -214,7 +223,7 @@ contract PrizeLinkedAccountVault is
         uint256 t;
         uint256 i;
         address[] storage previousDrawParticipants = _drawParticipant[
-            drawTimeStamp - 86400
+            drawTimeStamp.sub(86400)
         ];
         result = new address[](previousDrawParticipants.length);
         for (i = 0; i < previousDrawParticipants.length; i++) {
@@ -234,7 +243,7 @@ contract PrizeLinkedAccountVault is
                 t++;
             }
         }
-        uint256 unusedSpace = i - t;
+        uint256 unusedSpace = i.sub(t);
         assembly {
             mstore(result, sub(mload(result), unusedSpace))
         }
@@ -247,7 +256,7 @@ contract PrizeLinkedAccountVault is
     {
         uint32 processed;
         address[] storage previousDrawParticipants = _drawParticipant[
-            drawTimeStamp - 86400
+            drawTimeStamp.sub(86400)
         ];
 
         for (uint256 i = 0; i < previousDrawParticipants.length; i++) {
@@ -297,8 +306,8 @@ contract PrizeLinkedAccountVault is
                 _totalDeposit == 0,
             "GluwaPrizeLinkedAccount: the investment amount will make the total balance lower than the bottom threshold."
         );
-        _token.transfer(recipient, amount);
         emit Invested(recipient, amount);
+        _token.transfer(recipient, amount);
         return true;
     }
 
@@ -307,11 +316,12 @@ contract PrizeLinkedAccountVault is
         onlyOperator
         returns (bool)
     {
+        _boostingFund = _boostingFund.add(amount);
         require(
             _token.transferFrom(source, address(this), amount),
             "GluwaPrizeLinkedAccount: Unable to get the boosting fund from source"
         );
-        _boostingFund = _boostingFund.add(amount);
+        emit TopUpBalance(source, amount);
         return true;
     }
 
@@ -322,6 +332,7 @@ contract PrizeLinkedAccountVault is
     {
         _boostingFund = _boostingFund.sub(amount);
         _token.transfer(recipient, amount);
+        emit WithdrawBalance(recipient, amount);
         return true;
     }
 
@@ -357,6 +368,8 @@ contract PrizeLinkedAccountVault is
             winningChanceFactor,
             ticketRangeFactor
         );
+        emit AccountSavinSettingsUpdated(msg.sender, standardInterestRate, standardInterestRatePercentageBase, budget, minimumDeposit, ticketPerToken);
+        emit GluwaPrizeDrawSettingsUpdated(msg.sender, cutOffHour, cutOffMinute, processingCap, winningChanceFactor, ticketRangeFactor, lowerLimitPercentage);
     }
 
     function getPrizeLinkedAccountSettings()

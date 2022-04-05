@@ -154,7 +154,11 @@ describe('Invest from Vault', function () {
     await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount, user1.address);
     await prizeLinkedAccountVault.withdrawFor(user1.address, depositAmount);
     await gluwaCoin.connect(user2).approve(prizeLinkedAccountVault.address, depositAmount + BigInt(3));
-    await prizeLinkedAccountVault.addBoostingFund(user2.address, depositAmount + BigInt(1));
+    var addBoostingFundTxn = await prizeLinkedAccountVault.addBoostingFund(user2.address, depositAmount + BigInt(1));
+    var receipt = await addBoostingFundTxn.wait();
+    expect(receipt.events.length).to.equal(4);
+    await expect(addBoostingFundTxn).to.emit(prizeLinkedAccountVault, "TopUpBalance").withArgs(user2.address, depositAmount + BigInt(1));
+
     var investAmount = BigInt(await gluwaCoin.balanceOf(prizeLinkedAccountVault.address));
     var txn = await prizeLinkedAccountVault.invest(lender.address, investAmount);
     var receipt = await txn.wait();
