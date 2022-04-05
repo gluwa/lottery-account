@@ -31,7 +31,7 @@ describe('PLSA Vault Setting Checks', function () {
 
   it('check if setting is correctly done after initialization', async function () {
 
-    await prizeLinkedAccountVault.setPrizeLinkedAccountSettings(
+    var setPrizeLinkedAccountSettingsTxn = await prizeLinkedAccountVault.setPrizeLinkedAccountSettings(
       testHelper.standardInterestRate,
       testHelper.standardInterestRatePercentageBase,
       testHelper.budget,
@@ -44,7 +44,10 @@ describe('PLSA Vault Setting Checks', function () {
       1,
       testHelper.lowerLimitPercentage
     );
-    
+    var receipt = await setPrizeLinkedAccountSettingsTxn.wait();
+    expect(receipt.events.length).to.equal(1);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "SettingsUpdated").withArgs(owner.address);
+
     const {      
       0: ticketPerToken_1,    
       1: processingCap_1,     
@@ -96,7 +99,7 @@ describe('PLSA Vault Setting Checks', function () {
     const lowerLimitPercentage_0 = 51;
 
 
-    await prizeLinkedAccountVault.setPrizeLinkedAccountSettings(
+    var setPrizeLinkedAccountSettingsTxn = await prizeLinkedAccountVault.setPrizeLinkedAccountSettings(
       standardInterestRate_0,
       standardInterestRatePercentageBase_0,
       budget_0,
@@ -109,6 +112,9 @@ describe('PLSA Vault Setting Checks', function () {
       ticketRangeFactor_0,
       lowerLimitPercentage_0
     );
+    var receipt = await setPrizeLinkedAccountSettingsTxn.wait();
+    expect(receipt.events.length).to.equal(1);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "SettingsUpdated").withArgs(owner.address);
 
     const {      
       0: ticketPerToken_1,    
@@ -149,9 +155,17 @@ describe('PLSA Vault Setting Checks', function () {
     expect(await prizeLinkedAccountVault.getBoostingFund()).to.equal(0);
     await gluwaCoin.mint(user3.address, mintAmount);
     await gluwaCoin.connect(user3).approve(prizeLinkedAccountVault.address, depositAmount + BigInt(3));
-    await prizeLinkedAccountVault.addBoostingFund(user3.address, depositAmount + BigInt(3));
+    var addBoostingFundTxn = await prizeLinkedAccountVault.addBoostingFund(user3.address, depositAmount + BigInt(3));
+    var receipt = await addBoostingFundTxn.wait();
+    expect(receipt.events.length).to.equal(4);
+    await expect(addBoostingFundTxn).to.emit(prizeLinkedAccountVault, "TopUpBalance").withArgs(user3.address, depositAmount + BigInt(3));
+
     expect(await prizeLinkedAccountVault.getBoostingFund()).to.equal(depositAmount + BigInt(3));
-    await prizeLinkedAccountVault.withdrawBoostingFund(user3.address, 3);
+    var withdrawBoostingFundTxn = await prizeLinkedAccountVault.withdrawBoostingFund(user3.address, 3);
+    var receipt = await withdrawBoostingFundTxn.wait();
+    expect(receipt.events.length).to.equal(3);
+    await expect(withdrawBoostingFundTxn).to.emit(prizeLinkedAccountVault, "WithdrawBalance").withArgs(user3.address, 3);
+
     expect(await prizeLinkedAccountVault.getBoostingFund()).to.equal(depositAmount);
   });
 

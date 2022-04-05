@@ -34,7 +34,7 @@ describe('Ticket Reissuance', function () {
     const processingCap = 7;
     const randomMax = 99999999;
     const randomMin = 10000000;
-    await prizeLinkedAccountVault.setPrizeLinkedAccountSettings(
+    var setPrizeLinkedAccountSettingsTxn = await prizeLinkedAccountVault.setPrizeLinkedAccountSettings(
       testHelper.standardInterestRate,
       testHelper.standardInterestRatePercentageBase,
       testHelper.budget,
@@ -47,6 +47,10 @@ describe('Ticket Reissuance', function () {
       1,
       testHelper.lowerLimitPercentage
     );
+    var receipt = await setPrizeLinkedAccountSettingsTxn.wait();
+    expect(receipt.events.length).to.equal(1);
+    await expect(setPrizeLinkedAccountSettingsTxn).to.emit(prizeLinkedAccountVault, "SettingsUpdated").withArgs(owner.address);
+
     var drawDate1 = BigInt(0);
     var depositTime1 = ((Date.now() / 1000) | 0) - testHelper.TOTAL_SECONDS_PER_DAY;
     var totalInDraw1 = 0;
