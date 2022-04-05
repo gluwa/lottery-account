@@ -55,10 +55,10 @@ contract PrizeLinkedAccountVault is
         onlyOperator
         returns (bool)
     {
-        require(
-            !_prizePayingStatus[drawTimeStamp],
-            "GluwaPrizeLinkedAccount: Prize has been paid out"
-        );
+        // require(
+        //     !_prizePayingStatus[drawTimeStamp],
+        //     "GluwaPrizeLinkedAccount: Prize has been paid out"
+        // );
         address winner = getDrawWinner(drawTimeStamp);
         uint256 prize = (
             _totalPrizeBroughForward.add(_boostingFund).add(
