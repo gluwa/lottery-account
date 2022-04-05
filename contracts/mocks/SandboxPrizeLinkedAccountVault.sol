@@ -4,8 +4,6 @@ import "../PrizeLinkedAccountVault.sol";
 
 contract SandboxPrizeLinkedAccountVault is PrizeLinkedAccountVault {
 
-    event DrawResult(uint256 indexed drawTimeStamp, uint256 winningTicket);
-
     function makeDrawV1_Dummy(uint256 drawTimeStamp, uint256 seed)
         external
         onlyOperator
@@ -44,12 +42,12 @@ contract SandboxPrizeLinkedAccountVault is PrizeLinkedAccountVault {
             dateTime,
             securityHash
         );
-        bool createTicker = _createPrizedLinkTickets(depositHash);
+        bool isSuccess = _createPrizedLinkTickets(depositHash);
         require(
             _token.transferFrom(owner, address(this), amount),
             "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
         );
-        return createTicker;
+        return isSuccess;
     }
 
     function getBalanceEachDraw(uint256 drawTimeStamp) external view returns (uint256) {
@@ -71,24 +69,24 @@ contract SandboxPrizeLinkedAccountVault is PrizeLinkedAccountVault {
             now,
             securityHash
         );
-        bool createTicker = _createPrizedLinkTickets(depositHash);
+        bool isSuccess = _createPrizedLinkTickets(depositHash);
         require(
             _token.transferFrom(owner, address(this), amount),
             "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
         );
-        return createTicker;
+        return isSuccess;
     }
     function depositPrizedLinkAccount(address owner, uint256 amount, uint256 dateTime)
         external
         onlyOperator
         returns (bool)
     {
-        bool createDeposit = _depositPrizedLinkAccount(owner, amount, dateTime, false);
+        bool isSuccess = _depositPrizedLinkAccount(owner, amount, dateTime, false);
         require(
             _token.transferFrom(owner, address(this), amount),
             "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
         );
-        return createDeposit;
+        return isSuccess;
     }
 
 }

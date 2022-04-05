@@ -15,7 +15,8 @@ contract PrizeLinkedAccountVault is
     event DrawResult(uint256 indexed drawTimeStamp, uint256 winningTicket);
     event TopUpBalance(address indexed recipient, uint256 amount);
     event WithdrawBalance(address indexed recipient, uint256 amount);
-    event SettingsUpdated(address opperator);
+    event AccountSavinSettingsUpdated(address opperator, uint32 standardInterestRate, uint32 standardInterestRatePercentageBase, uint256 budget, uint256 minimumDeposit, uint64 ticketPerToken);
+    event GluwaPrizeDrawSettingsUpdated(address opperator, uint8 cutOffHour, uint8 cutOffMinute, uint16 processingCap, uint16 winningChanceFactor, uint128 ticketRangeFactor, uint8 lowerLimitPercentage);
 
     using DateTimeModel for DateTimeModel;
 
@@ -110,12 +111,12 @@ contract PrizeLinkedAccountVault is
             now,
             securityHash
         );
-        bool createTicker = _createPrizedLinkTickets(depositHash);
+        bool isSuccess = _createPrizedLinkTickets(depositHash);
         require(
             _token.transferFrom(owner, address(this), amount),
             "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
         );
-        return createTicker;
+        return isSuccess;
     }
 
     function depositPrizedLinkAccount(address owner, uint256 amount)
@@ -123,12 +124,12 @@ contract PrizeLinkedAccountVault is
         onlyOperator
         returns (bool)
     {
-        bool createDeposit = _depositPrizedLinkAccount(owner, amount, now, false);
+        bool isSuccess = _depositPrizedLinkAccount(owner, amount, now, false);
         require(
             _token.transferFrom(owner, address(this), amount),
             "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
         );
-        return createDeposit;
+        return isSuccess;
     }
 
     function _depositPrizedLinkAccount(
@@ -367,7 +368,8 @@ contract PrizeLinkedAccountVault is
             winningChanceFactor,
             ticketRangeFactor
         );
-        emit SettingsUpdated(msg.sender);
+        emit AccountSavinSettingsUpdated(msg.sender, standardInterestRate, standardInterestRatePercentageBase, budget, minimumDeposit, ticketPerToken);
+        emit GluwaPrizeDrawSettingsUpdated(msg.sender, cutOffHour, cutOffMinute, processingCap, winningChanceFactor, ticketRangeFactor, lowerLimitPercentage);
     }
 
     function getPrizeLinkedAccountSettings()
