@@ -1,7 +1,7 @@
 const abi = require('./abi');
-// const PLSASandBoxAddress = "0x1b3a2f57ccefccf3712abbc0e6b5d2623a48aad8";//Test
+const PLSASandBoxAddress = "0xd7113fa27101e008ab0052e9c0e4e598bc57de3c";//Test
 // const PLSASandBoxAddress = "0xc8113935a3a457fd9e9c3fd432d0b38308bf07ee";// local
-const PLSASandBoxAddress = "0x444194906b130916a5e569f45a4f6d1f10c8ceaf";// unit test for myself
+// const PLSASandBoxAddress = "0x444194906b130916a5e569f45a4f6d1f10c8ceaf";// unit test for myself
 const operator = "0xfd91d059F0D0D5F6AdeE0f4Aa1FDF31da2557BC9";
 const privateKey = "ac407fa511df5105b17881936d07c9be43ed22fc5b80d676383fdaf31ffedb5e";
 const luniversePRC = "http://baas-rpc.luniverse.io:8545?lChainId=1635501961136826136";  
@@ -38,12 +38,12 @@ async function LuniverseContractInstancelize(){
         
     // input = await prizeLinkedAccountVault.populateTransaction.addOperator(owner.address);
     // receipt = await submitRawTxn(input, owner, ethers, provider);
-    input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
-        standardInterestRate,
-      standardInterestRatePercentageBase, budget, ticketPerToken,1,
-      cutOffHour, cutOffMinute, processingCap,winningChanceFactor, ticketRangeFactor, lowerLimitPercentage
-      );
-    await submitRawTxn(input, owner, ethers, provider);
+    // input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
+    //     standardInterestRate,
+    //   standardInterestRatePercentageBase, budget, ticketPerToken,1,
+    //   cutOffHour, cutOffMinute, processingCap,winningChanceFactor, ticketRangeFactor, lowerLimitPercentage
+    //   );
+    // await submitRawTxn(input, owner, ethers, provider);
     return {gluwaCoin, prizeLinkedAccountVault, owner, provider}
 }
 async function setupContractTesting(owner, user1, user2, mintAmount, depositAmount) {
