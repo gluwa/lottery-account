@@ -40,6 +40,8 @@ var abi;
 var iface;
 var abi2;
 var iface2;
+var LuniverseInstance;
+
 // Start test block
 if(testHelper.LuniversetestActivate)
 describe('Boundary test for drawing and ticket issuance', function () {
@@ -50,10 +52,11 @@ describe('Boundary test for drawing and ticket issuance', function () {
     var DateTimeModel = await this.DateTimeModel.deploy();
     await DateTimeModel.deployed();
     await GluwaAccountModel.deployed();
-    gluwaCoin = (await testHelper.LuniverseContractInstancelize()).gluwaCoin;
-    prizeLinkedAccountVault = (await testHelper.LuniverseContractInstancelize()).prizeLinkedAccountVault;
-    provider = (await testHelper.LuniverseContractInstancelize()).provider;
-    owner = (await testHelper.LuniverseContractInstancelize()).owner; 
+    LuniverseInstance = await testHelper.LuniverseContractInstancelize();
+    gluwaCoin = LuniverseInstance.gluwaCoin;
+    prizeLinkedAccountVault = LuniverseInstance.prizeLinkedAccountVault;
+    provider = LuniverseInstance.provider;
+    owner = LuniverseInstance.owner; 
     user1 = await ethers.Wallet.createRandom();
     bank1 = await ethers.Wallet.createRandom();
     bank2 = await ethers.Wallet.createRandom();
@@ -61,7 +64,7 @@ describe('Boundary test for drawing and ticket issuance', function () {
   });
 
   beforeEach(async function () {
-    owner = (await testHelper.LuniverseContractInstancelize()).owner; 
+    owner = LuniverseInstance.owner; 
     abi = [ "event TicketCreated(uint256 indexed drawTimeStamp, uint256 indexed ticketId, address indexed owner, uint256 upper, uint256 lower)" ];
     iface = new ethers.utils.Interface(abi);
     abi2 = [ "event WinnerSelected(address winner, uint256 reward)" ];
@@ -74,7 +77,7 @@ describe('Boundary test for drawing and ticket issuance', function () {
   });
 
   it('create prize-linked account with many tickets', async function () {
-    owner = (await testHelper.LuniverseContractInstancelize()).owner; 
+    owner = LuniverseInstance.owner; 
     input = await prizeLinkedAccountVault.connect(owner).populateTransaction['createPrizedLinkAccount(address,uint256,bytes)'](user1.address, large_depositAmount, user1.address);
 
     var receipt = await testHelper.submitRawTxn(input,owner, ethers, provider);
@@ -95,22 +98,21 @@ describe('Boundary test for drawing and ticket issuance', function () {
       1: ticket_owner,
       2: ticket_lower,
       3: ticket_upper } = (await prizeLinkedAccountVault.getTicketRangeById(ticketId));
-      console.info(ticket_upper);
 
     expect(upper).to.equal(ticket_upper);
     expect(lower).to.equal(ticket_lower);
     expect(owner).to.equal(ticket_owner);
     expect(owner).to.equal(user1.address);
 
-    expect(testHelper.getTimeFromTimestamp(drawDate)).to.equal("17:00:00");   
-    var range = BigInt(upper) - BigInt(lower);
+    expect(testHelper.getTimeFromTimestamp(drawDate)).to.equal("12:00:00");   
+    var range = BigInt(upper) - BigInt(lower) + BigInt(1);
     expect(range).to.equal((large_depositAmount / decimalsVal));
 
   });
 
   it('create multiple prize-linked accounts with many tickets', async function () {
-    owner = (await testHelper.LuniverseContractInstancelize()).owner; 
-
+    owner = LuniverseInstance.owner; 
+     
     var balance = await gluwaCoin.balanceOf(prizeLinkedAccountVault.address);
     for (var i = 0; i < targetAccountCreated; i++) {
       var temp = await ethers.Wallet.createRandom();
@@ -133,10 +135,11 @@ describe('Boundary test for drawing and ticket issuance', function () {
       var lower = event.args[3];
       var upper = event.args[4];
 
-      range = upper - lower;
-      expect(range).to.equal(parseInt(depositAmount / decimalsVal));
+      range = upper.toBigInt() - lower.toBigInt() + BigInt(1);
+      expect(range).to.equal(BigInt(depositAmount / decimalsVal));
       expect(owner).to.equal(temp.address);
-      expect(testHelper.getTimeFromTimestamp(drawDate)).to.equal("17:00:00");
+      expect(testHelper.getTimeFromTimestamp(drawDate)).to.equal("12:00:00");
+      expect((await gluwaCoin.balanceOf(prizeLinkedAccountVault.address))).to.equal(BigInt(balance) + BigInt(depositAmount));
 
     }
 
@@ -144,7 +147,7 @@ describe('Boundary test for drawing and ticket issuance', function () {
 
   it('do drawing with large number of participant', async function () {
 
-    owner = (await testHelper.LuniverseContractInstancelize()).owner; 
+    owner = LuniverseInstance.owner; 
     let abi = [ "event TicketCreated(uint256 indexed drawTimeStamp, uint256 indexed ticketId, address indexed owner, uint256 upper, uint256 lower)" ];
     let iface = new ethers.utils.Interface(abi);
 
@@ -186,7 +189,7 @@ describe('Boundary test for drawing and ticket issuance', function () {
   });
 
   it('do drawing and award winner with large number of participant', async function () {
-    owner = (await testHelper.LuniverseContractInstancelize()).owner; 
+    owner = LuniverseInstance.owner; 
 
     var totalInDraw = 0;
     var drawDate = BigInt(0);
@@ -218,7 +221,7 @@ describe('Boundary test for drawing and ticket issuance', function () {
 
     input = await prizeLinkedAccountVault.populateTransaction.makeDrawV1(drawDate,Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
     receipt = await testHelper.submitRawTxn(input,owner, ethers, provider);
-    input = await prizeLinkedAccountVault.populateTransaction.awardWinnerV1_Dummy(drawDate);
+    input = await prizeLinkedAccountVault.populateTransaction.awardWinnerV1(drawDate);
     var receiptWinner = await testHelper.submitRawTxn(input,owner, ethers, provider);
     var winnerEvent;
     for(var i=0;i<receiptWinner.logs.length; i++){
