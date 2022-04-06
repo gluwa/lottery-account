@@ -1,12 +1,12 @@
 const abi = require('./abi');
-const PLSASandBoxAddress = "0xd7113fa27101e008ab0052e9c0e4e598bc57de3c";//Test
+const PLSASandBoxAddress = "0x88d538741d95390b6f624120de85eea59caee1e0";//Test
 // const PLSASandBoxAddress = "0xc8113935a3a457fd9e9c3fd432d0b38308bf07ee";// local
 // const PLSASandBoxAddress = "0x444194906b130916a5e569f45a4f6d1f10c8ceaf";// unit test for myself
 const operator = "***REMOVED***";
 const privateKey = "***REMOVED***";
 const luniversePRC = "http://baas-rpc.luniverse.io:8545?lChainId=1635501961136826136";  
-// const GluwaCoinAddress = "0xdbde880e1405a6914b387606933d7476a2296a06";// test env
-const GluwaCoinAddress = "0x527C4222550b07aabF5Fe301aD88C5799E944Bf1"; // unit test
+const GluwaCoinAddress = "0xdbde880e1405a6914b387606933d7476a2296a06";// test env
+// const GluwaCoinAddress = "0x527C4222550b07aabF5Fe301aD88C5799E944Bf1"; // unit test
 async function createWallets(numberOfWallet, etherFaucetAddress) {
     let wallets = [];
     for (var i = 0; i < numberOfWallet; i++) {
@@ -38,12 +38,13 @@ async function LuniverseContractInstancelize(){
         
     // input = await prizeLinkedAccountVault.populateTransaction.addOperator(owner.address);
     // receipt = await submitRawTxn(input, owner, ethers, provider);
-    // input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
-    //     standardInterestRate,
-    //   standardInterestRatePercentageBase, budget, ticketPerToken,1,
-    //   cutOffHour, cutOffMinute, processingCap,winningChanceFactor, ticketRangeFactor, lowerLimitPercentage
-    //   );
-    // await submitRawTxn(input, owner, ethers, provider);
+    input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
+        standardInterestRate,
+      standardInterestRatePercentageBase, budget, ticketPerToken,1,
+      cutOffHour, cutOffMinute, processingCap,winningChanceFactor, ticketRangeFactor, lowerLimitPercentage
+      );
+    res = await submitRawTxn(input, owner, ethers, provider);
+    console.log(res)
     return {gluwaCoin, prizeLinkedAccountVault, owner, provider}
 }
 async function setupContractTesting(owner, user1, user2, mintAmount, depositAmount) {
