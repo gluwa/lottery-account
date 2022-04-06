@@ -16,20 +16,21 @@ var depositAmount = BigInt(30000) * testHelper.decimalsVal;
 var prizeLinkedAccountVault;
 var gluwaCoin;
 var gluwaCoin2;
-
+var LuniverseInstance;
 
 if(testHelper.LuniversetestActivate)
 // Start test block
 describe('Gluwacoin', function () {
   before(async function () {
-    gluwaCoin = (await testHelper.LuniverseContractInstancelize()).gluwaCoin;
-    prizeLinkedAccountVault = (await testHelper.LuniverseContractInstancelize()).prizeLinkedAccountVault;
-    provider = (await testHelper.LuniverseContractInstancelize()).provider;
+    LuniverseInstance= (await testHelper.LuniverseContractInstancelize());
+    gluwaCoin = LuniverseInstance.gluwaCoin;
+    prizeLinkedAccountVault = LuniverseInstance.prizeLinkedAccountVault;
+    provider = LuniverseInstance.provider;
     
   });
 
   beforeEach(async function () {
-    owner = (await testHelper.LuniverseContractInstancelize()).owner; 
+    owner = LuniverseInstance.owner; 
     user1 = await ethers.Wallet.createRandom();
     user2 = await ethers.Wallet.createRandom();
     user3 = await ethers.Wallet.createRandom();
@@ -54,29 +55,39 @@ describe('Gluwacoin', function () {
       testHelper.cutOffHour,
       testHelper.cutOffMinute,
       testHelper.processingCap,
+      testHelper.winningChanceFactor,
       1,
       testHelper.lowerLimitPercentage
     );
     res = await testHelper.submitRawTxn(input, owner, ethers, provider);
+
+    const {      
+      0: ticketPerToken_1,    
+      1: processingCap_1,     
+      2: lowerLimitPercentage_1
+    } = await prizeLinkedAccountVault.getPrizeLinkedAccountSettings();
+
     const {
       0: standardInterestRate_1,
       1: standardInterestRatePercentageBase_1,
       2: budget_1,
       3: minimumDeposit_1,
-      4: token_1,
-      5: ticketPerToken_1,
-      6: cutOffHour_1,
-      7: cutOffMinute_1,
-      8: processingCap_1,
-      9: ticketRangeFactor_1,
-      10: lowerLimitPercentage_1
-    } = await prizeLinkedAccountVault.getPrizeLinkedAccountSettings();
-    
+      4: token_1      
+    } = await prizeLinkedAccountVault.getSavingSettings();
+
+    const {      
+      0: cutOffHour_1,
+      1: cutOffMinute_1,
+      2: winningChanceFactor_1,
+      3: ticketRangeFactor_1
+    } = await prizeLinkedAccountVault.getGluwaPrizeDrawSettings();
+
     expect(standardInterestRate_1).to.equal(testHelper.standardInterestRate);
     expect(standardInterestRatePercentageBase_1).to.equal(testHelper.standardInterestRatePercentageBase);
     expect(budget_1).to.equal(testHelper.budget);
     expect(minimumDeposit_1).to.equal(1);
     expect(token_1).to.equal(gluwaCoin.address);
+    expect(winningChanceFactor_1).to.equal(testHelper.winningChanceFactor);
     expect(ticketPerToken_1).to.equal(1);
     expect(cutOffHour_1).to.equal(testHelper.cutOffHour);
     expect(cutOffMinute_1).to.equal(testHelper.cutOffMinute);
@@ -98,7 +109,7 @@ describe('Gluwacoin', function () {
     const processingCap_0 = 212;
     const ticketRangeFactor_0 = 3;
     const lowerLimitPercentage_0 = 51;
-
+    const winningChanceFactor_0 = 15;
 
     input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
       standardInterestRate_0,
@@ -109,24 +120,32 @@ describe('Gluwacoin', function () {
       cutOffHour_0,
       cutOffMinute_0,
       processingCap_0,
+      winningChanceFactor_0,
       ticketRangeFactor_0,
       lowerLimitPercentage_0
     );
     await testHelper.submitRawTxn(input, owner, ethers, provider);
+
+    const {      
+      0: ticketPerToken_1,    
+      1: processingCap_1,     
+      2: lowerLimitPercentage_1
+    } = await prizeLinkedAccountVault.getPrizeLinkedAccountSettings();
 
     const {
       0: standardInterestRate_1,
       1: standardInterestRatePercentageBase_1,
       2: budget_1,
       3: minimumDeposit_1,
-      4: token_1,
-      5: ticketPerToken_1,
-      6: cutOffHour_1,
-      7: cutOffMinute_1,
-      8: processingCap_1,
-      9: ticketRangeFactor_1,
-      10: lowerLimitPercentage_1
-    } = await prizeLinkedAccountVault.getPrizeLinkedAccountSettings();
+      4: token_1      
+    } = await prizeLinkedAccountVault.getSavingSettings();
+
+    const {      
+      0: cutOffHour_1,
+      1: cutOffMinute_1,
+      2: winningChanceFactor_1,
+      3: ticketRangeFactor_1
+    } = await prizeLinkedAccountVault.getGluwaPrizeDrawSettings();
 
     expect(standardInterestRate_1).to.equal(standardInterestRate_0);
     expect(standardInterestRatePercentageBase_1).to.equal(standardInterestRatePercentageBase_0);
@@ -137,8 +156,29 @@ describe('Gluwacoin', function () {
     expect(cutOffHour_1).to.equal(cutOffHour_0);
     expect(cutOffMinute_1).to.equal(cutOffMinute_0);
     expect(processingCap_1).to.equal(processingCap_0);
+    expect(winningChanceFactor_1).to.equal(winningChanceFactor_0);
     expect(ticketRangeFactor_1).to.equal(ticketRangeFactor_0);
     expect(lowerLimitPercentage_1).to.equal(lowerLimitPercentage_0);
   });
+  
+  it('check if boosting fund is correctly set', async function () {
+    leftAmount = await prizeLinkedAccountVault.getBoostingFund();
+    input = await prizeLinkedAccountVault.populateTransaction.withdrawBoostingFund(user3.address, leftAmount);
+    await testHelper.submitRawTxn(input, owner, ethers, provider);
+
+    expect(await prizeLinkedAccountVault.getBoostingFund()).to.equal(0);
+    input = await gluwaCoin.populateTransaction.mint(user3.address, mintAmount);
+    await testHelper.submitRawTxn(input, owner, ethers, provider);
+    input = await gluwaCoin.connect(user3).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount + BigInt(3));
+    await testHelper.submitRawTxn(input, user3, ethers, provider);
+    input = await prizeLinkedAccountVault.populateTransaction.addBoostingFund(user3.address, depositAmount + BigInt(3));
+    await testHelper.submitRawTxn(input, owner, ethers, provider);
+    expect(await prizeLinkedAccountVault.getBoostingFund()).to.equal(depositAmount + BigInt(3));
+    input = await prizeLinkedAccountVault.populateTransaction.withdrawBoostingFund(user3.address, 3);
+    await testHelper.submitRawTxn(input, owner, ethers, provider);
+
+    expect(await prizeLinkedAccountVault.getBoostingFund()).to.equal(depositAmount);
+  });
+
 
 });
