@@ -54,7 +54,9 @@ contract PrizeLinkedAccountVault is
         _processingCap = processingCap;   
         _lowerLimitPercentage = lowerLimitPercentage;
     }
-
+    function getVersion()external view returns(string memory){
+        return "1.1";
+    }
     function awardWinnerV1(uint256 drawTimeStamp)
         external
         onlyOperator
