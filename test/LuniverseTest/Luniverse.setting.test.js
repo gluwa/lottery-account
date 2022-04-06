@@ -162,6 +162,10 @@ describe('Gluwacoin', function () {
   });
   
   it('check if boosting fund is correctly set', async function () {
+    leftAmount = await prizeLinkedAccountVault.getBoostingFund();
+    input = await prizeLinkedAccountVault.populateTransaction.withdrawBoostingFund(user3.address, leftAmount);
+    await testHelper.submitRawTxn(input, owner, ethers, provider);
+
     expect(await prizeLinkedAccountVault.getBoostingFund()).to.equal(0);
     input = await gluwaCoin.populateTransaction.mint(user3.address, mintAmount);
     await testHelper.submitRawTxn(input, owner, ethers, provider);
