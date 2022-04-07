@@ -383,17 +383,13 @@ describe('Prize Draw', function () {
       drawDate2 = ticketEvent[0];
     }
 
-
     const randomMax = 99999999;
     const randomMin = 10000000;
     input = await prizeLinkedAccountVault.populateTransaction.makeDrawV1(drawDate2, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
     receipt = await testHelper.submitRawTxn(input,owner, ethers, provider);
     var { 0: owners, 1: tickets, 2: winningTicket2, 3: balanceEachDraw2 } = await prizeLinkedAccountVault.getDrawDetails(drawDate2);
 
-
     var winner2 = await prizeLinkedAccountVault.getDrawWinner(drawDate2);
-    // console.info("drawDate2 " + drawDate2);
-
     const { 0: savingAccount_idx,
       1: savingAccount_hash,
       2: savingAccount_owner,

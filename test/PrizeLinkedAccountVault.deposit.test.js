@@ -44,7 +44,7 @@ describe('Deposit test', function () {
     await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount / BigInt(2), user1.address);
     var lastHash;
     await gluwaCoin.connect(user1).approve(prizeLinkedAccountVault.address, depositAmount * BigInt(10));
-    for(var i=0;i<10;i++){
+    for (var i = 0; i < 10; i++) {
       txn = await testHelper.depositPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount);
       receipt = await txn.wait();
       var depositHash = receipt.events.filter(function (one) {
@@ -55,7 +55,58 @@ describe('Deposit test', function () {
     }
 
   });
-  
+
+
+  it('make subsequent deposits', async function () {
+    await gluwaCoin.connect(user1).approve(prizeLinkedAccountVault.address, BigInt(3) * depositAmount);
+    var depositTime1 = ((Date.now() / 1000) | 0) - testHelper.TOTAL_SECONDS_PER_DAY - 10;
+    var depositTime2 = ((Date.now() / 1000) | 0) - 10;
+    var accountTxn = await testHelper.createPrizeLinkedAccountSandBox(prizeLinkedAccountVault, user1.address, depositAmount, depositTime1, user1.address);
+
+    var receipt = await accountTxn.wait();
+    var ticketEvent = receipt.events.filter(function (one) {
+      return one.event == "TicketCreated";
+    })[0].args;
+
+    var drawDate1 = ticketEvent[0];
+    var depoistTxn = await testHelper.depositPrizeLinkedAccountSandBox(prizeLinkedAccountVault, user1.address, depositAmount, depositTime2);
+    receipt = await depoistTxn.wait();
+    var ticketEvent = receipt.events.filter(function (one) {
+      return one.event == "TicketCreated";
+    })[0].args;
+
+    var drawDate2 = ticketEvent[0];
+
+    expect((await prizeLinkedAccountVault.getEligibleAddressPendingAddedToDraw(drawDate2)).length).to.equal(0);
+    var ticketList = await prizeLinkedAccountVault.getTickerIdsByOwnerAndDrawFor(drawDate1, user1.address);
+    var totalTickets1 = BigInt(0);
+
+    for (var i = 0; i < ticketList.length; i++) {
+      const {
+        0: id,
+        1: owner,
+        2: lower,
+        3: upper
+      } = await prizeLinkedAccountVault.getTicketRangeById(ticketList[i]);
+      totalTickets1 += upper.toBigInt() - lower.toBigInt() + BigInt(1);
+    }
+    expect(totalTickets1).to.equal(depositAmount / testHelper.decimalsVal);
+
+    ticketList = await prizeLinkedAccountVault.getTickerIdsByOwnerAndDrawFor(drawDate2, user1.address);
+    var totalTickets2 = BigInt(0);
+
+    for (var i = 0; i < ticketList.length; i++) {
+      const {
+        0: id,
+        1: owner,
+        2: lower,
+        3: upper
+      } = await prizeLinkedAccountVault.getTicketRangeById(ticketList[i]);
+      totalTickets2 += upper.toBigInt() - lower.toBigInt() + BigInt(1);
+    }
+    expect(totalTickets2).to.equal(BigInt(2) * depositAmount / testHelper.decimalsVal);
+  });
+
   it('get prize-linked account info', async function () {
     var currentTime = Math.floor(Date.now() / 1000);
     var accountTxn = await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount, user1.address);
@@ -77,8 +128,6 @@ describe('Deposit test', function () {
     expect(savingAccount_owner).to.equal(user1.address);
     expect(savingAccount_state).to.equal(testHelper.ACCOUNT_ACTIVE_STAGE);
     expect(savingAccount_balance).to.equal(depositAmount);
-    console.info("check point");
-
 
     var ticketEvent = receipt.events.filter(function (one) {
       return one.event == "TicketCreated";
@@ -102,8 +151,6 @@ describe('Deposit test', function () {
     expect(timeStampDiff).to.greaterThan(testHelper.TOTAL_SECONDS_PER_DAY);
     expect(2 * testHelper.TOTAL_SECONDS_PER_DAY).to.greaterThan(timeStampDiff);
 
-    console.info("check point");
-
     var c_upper = upper.toBigInt();
     var c_lower = lower.toBigInt();
     var range = c_upper - c_lower + BigInt(1);
@@ -115,7 +162,6 @@ describe('Deposit test', function () {
       2: ticket_lower,
       3: ticket_upper } = (await prizeLinkedAccountVault.getTicketRangeById(ticketId));
 
-    console.info("check point");
     expect(c_upper).to.equal(ticket_upper);
     expect(c_lower).to.equal(ticket_lower);
     expect(owner).to.equal(ticket_owner);

@@ -54,7 +54,7 @@ contract PrizeLinkedAccountVault is
         _processingCap = processingCap;   
         _lowerLimitPercentage = lowerLimitPercentage;
     }
-    function getVersion()external view returns(string memory){
+    function getVersion()external pure returns(string memory){
         return "1.1";
     }
     function awardWinnerV1(uint256 drawTimeStamp)
@@ -163,7 +163,7 @@ contract PrizeLinkedAccountVault is
                 deposit.owner,
                 deposit.creationDate,
                 _addressSavingAccountMapping[deposit.owner].balance,
-                _convertDepositToTotalTicket(deposit.amount)
+                _convertDepositToTotalTicket(_addressSavingAccountMapping[deposit.owner].balance)
             );
         } else {
             _createTicketForDeposit(
@@ -303,7 +303,7 @@ contract PrizeLinkedAccountVault is
         );
         uint256 totalBalance = _token.balanceOf(address(this));
         require(
-            totalBalance - amount >=
+            totalBalance.sub(amount) >=
                 totalBalance.mul(_lowerLimitPercentage).div(100) ||
                 _totalDeposit == 0,
             "GluwaPrizeLinkedAccount: the investment amount will make the total balance lower than the bottom threshold."

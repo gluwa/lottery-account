@@ -201,4 +201,8 @@ describe('PLSA Vault Setting Checks', function () {
     expect(await prizeLinkedAccountVault.getBoostingFund()).to.equal(depositAmount);
   });
 
+  it('check contract version', async function () {
+    expect(await prizeLinkedAccountVault.getVersion()).to.equal("1.1");
+  });
+
 });
