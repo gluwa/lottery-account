@@ -503,10 +503,7 @@ describe('Prize Draw', function () {
   
     var { 0: owners, 1: tickets, 2: winningTicket2, 3: balanceEachDraw2 } = await prizeLinkedAccountVault.getDrawDetails(drawDate2);
 
-
     var winner2 = await prizeLinkedAccountVault.getDrawWinner(drawDate2);
-    console.info("drawDate2 " + drawDate2);
-
     const { 0: savingAccount_idx,
       1: savingAccount_hash,
       2: savingAccount_owner,
@@ -632,8 +629,6 @@ describe('Prize Draw', function () {
     var { 0: owners, 1: tickets, 2: winningTicket, 3: balanceEachDraw } = await prizeLinkedAccountVault.getDrawDetails(drawDate);
 
     var winner = await prizeLinkedAccountVault.getDrawWinner(drawDate);
-    console.info("drawDate " + drawDate);
-
     var winnerTxn = await prizeLinkedAccountVault.awardWinnerV1(drawDate);
     var receiptWinner = await winnerTxn.wait();
     var winnerEvent = receiptWinner.events.filter(function (one) {

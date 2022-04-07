@@ -106,9 +106,7 @@ describe('Boundary test for drawing and ticket issuance', function () {
       var range = upper.toBigInt() - lower.toBigInt()+ BigInt(1);
       expect(range).to.equal((depositAmount / decimalsVal));
       expect(owner).to.equal(temp.address);
-      console.info(drawDate);
       expect(testHelper.getTimeFromTimestamp(drawDate.toNumber())).to.equal("17:00:00");
-
     }
 
     expect((await gluwaCoin.balanceOf(prizeLinkedAccountVault.address)).toString()).to.equal((BigInt(balance) + BigInt(targetAccountCreated) * depositAmount).toString());

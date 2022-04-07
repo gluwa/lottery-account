@@ -83,7 +83,12 @@ contract GluwaPrizeDraw is Initializable, Context {
             uint128
         )
     {
-        return (_cutOffHour, _cutOffMinute, _winningChanceFactor, _ticketRangeFactor);
+        return (
+            _cutOffHour,
+            _cutOffMinute,
+            _winningChanceFactor,
+            _ticketRangeFactor
+        );
     }
 
     function _randomNumber(
@@ -117,9 +122,13 @@ contract GluwaPrizeDraw is Initializable, Context {
         max =
             _tickets[drawTickets[drawTickets.length - 1]].upper +
             (_winningChanceFactor *
-            _convertDepositToTotalTicket(_balanceEachDraw[drawTimeStamp]))
-            - _removedTicketsEachDraw[drawTimeStamp];
-        min = _tickets[drawTickets[0]].lower;
+                _convertDepositToTotalTicket(_balanceEachDraw[drawTimeStamp])) -
+            _removedTicketsEachDraw[drawTimeStamp];
+        if (_tickets[drawTickets[0]].lower == 0) {
+            min = _ticketRangeFactor;
+        } else {
+            min = _tickets[drawTickets[0]].lower;
+        }
     }
 
     function _findDrawWinner(uint256 drawTimeStamp, bytes memory externalFactor)
@@ -282,12 +291,12 @@ contract GluwaPrizeDraw is Initializable, Context {
                     _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
                         .lower +
                     1;
-                if (ticketsToRemove > issuedTickets) {
+                if (ticketsToRemove >= issuedTickets) {
                     ticketsToRemove = ticketsToRemove - issuedTickets;
                     _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
-                        .lower = _tickets[
-                        _drawParticipantTicket[drawTimeStamp][owner_][i]
-                    ].upper;
+                        .lower = 0;
+                    _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
+                        .upper = 0;
                     _removedTicketsEachDraw[drawTimeStamp] += issuedTickets;
                 } else {
                     _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
