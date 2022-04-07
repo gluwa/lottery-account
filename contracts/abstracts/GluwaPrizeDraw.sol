@@ -305,7 +305,7 @@ contract GluwaPrizeDraw is Initializable, Context {
                     break;
                 }
             }
-            if (amount > _drawParticipantDeposit[drawTimeStamp][owner_]) {
+            if (amount >= _drawParticipantDeposit[drawTimeStamp][owner_]) {
                 _drawParticipantDeposit[drawTimeStamp][owner_] = 0;
                 _balanceEachDraw[drawTimeStamp] -= _drawParticipantDeposit[
                     drawTimeStamp
