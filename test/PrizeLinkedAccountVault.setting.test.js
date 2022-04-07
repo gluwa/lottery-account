@@ -202,7 +202,7 @@ describe('PLSA Vault Setting Checks', function () {
   });
 
   it('check contract version', async function () {
-    expect(await prizeLinkedAccountVault.getVersion()).to.equal("1.1");
+    expect(await prizeLinkedAccountVault.getVersion()).to.equal("1.2");
   });
 
 });
