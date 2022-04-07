@@ -31,7 +31,7 @@ contract VaultControl is Initializable, Context, AccessControlUpgradeSafe {
     }
 
     /// @dev Add an account to the admin role. Restricted to admins.
-    function addAdmin(address account) public onlyAdmin {
+    function addAdmin(address account) external onlyAdmin {
         grantRole(OPERATOR_ROLE, account);
         grantRole(DEFAULT_ADMIN_ROLE, account);
     }
@@ -42,24 +42,24 @@ contract VaultControl is Initializable, Context, AccessControlUpgradeSafe {
     }
 
     /// @dev Add an account to the operator role. Restricted to admins.
-    function addOperator(address account) public onlyAdmin {
+    function addOperator(address account) external onlyAdmin {
         grantRole(OPERATOR_ROLE, account);
     }
 
     /// @dev Remove an account from the Operator role. Restricted to admins.
-    function removeOperator(address account) public onlyAdmin {
+    function removeOperator(address account) external onlyAdmin {
         revokeRole(OPERATOR_ROLE, account);
     }
 
     /// @dev Remove oneself from the Admin role thus all other roles.
-    function renounceAdmin() public {
+    function renounceAdmin() external {
         address sender = _msgSender();
         renounceRole(DEFAULT_ADMIN_ROLE, sender);
         renounceRole(OPERATOR_ROLE, sender);
     }
 
     /// @dev Remove oneself from the Operator role.
-    function renounceOperator() public {
+    function renounceOperator() external {
         renounceRole(OPERATOR_ROLE, _msgSender());
     }
 
