@@ -119,16 +119,28 @@ contract GluwaPrizeDraw is Initializable, Context {
     {
         uint96[] storage drawTickets = _drawTicketMapping[drawTimeStamp];
         require(drawTickets.length > 0, "No Participant at this time");
+        uint256 i;
+        uint256 totalWithdrawGap;
+        min = _tickets[drawTickets[0]].lower;
+        max = _tickets[drawTickets[0]].upper;
+        for (i = 1; i < drawTickets.length; i++) {
+            if (_tickets[drawTickets[i]].lower > 0) {
+                if (max > 0) {
+                    totalWithdrawGap = totalWithdrawGap.add(
+                        _tickets[drawTickets[i]].lower.sub(max) - 1
+                    );
+                }
+                max = _tickets[drawTickets[i]].upper;
+                if (min == 0) {
+                    min = _tickets[drawTickets[i]].lower;
+                }
+            }
+        }
         max =
-            _tickets[drawTickets[drawTickets.length - 1]].upper +
+            max +
             (_winningChanceFactor *
                 _convertDepositToTotalTicket(_balanceEachDraw[drawTimeStamp])) -
-            _removedTicketsEachDraw[drawTimeStamp];
-        if (_tickets[drawTickets[0]].lower == 0) {
-            min = _ticketRangeFactor;
-        } else {
-            min = _tickets[drawTickets[0]].lower;
-        }
+            totalWithdrawGap;
     }
 
     function _findDrawWinner(uint256 drawTimeStamp, bytes memory externalFactor)
@@ -306,10 +318,10 @@ contract GluwaPrizeDraw is Initializable, Context {
                 }
             }
             if (amount >= _drawParticipantDeposit[drawTimeStamp][owner_]) {
-                _drawParticipantDeposit[drawTimeStamp][owner_] = 0;
                 _balanceEachDraw[drawTimeStamp] -= _drawParticipantDeposit[
                     drawTimeStamp
                 ][owner_];
+                _drawParticipantDeposit[drawTimeStamp][owner_] = 0;
             } else {
                 _drawParticipantDeposit[drawTimeStamp][owner_] -= amount;
                 _balanceEachDraw[drawTimeStamp] -= amount;

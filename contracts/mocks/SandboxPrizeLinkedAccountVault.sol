@@ -54,6 +54,10 @@ contract SandboxPrizeLinkedAccountVault is PrizeLinkedAccountVault {
         return _balanceEachDraw[drawTimeStamp];
     }
 
+    function setBalanceEachDraw(uint256 drawTimeStamp, uint256 amount) external {
+        _balanceEachDraw[drawTimeStamp] = amount;
+    }
+
     function getRemovedTicketsEachDraw(uint256 drawTimeStamp) external view returns (uint256) {
         return _removedTicketsEachDraw[drawTimeStamp];
     }
