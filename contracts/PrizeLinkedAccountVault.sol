@@ -55,7 +55,7 @@ contract PrizeLinkedAccountVault is
         _lowerLimitPercentage = lowerLimitPercentage;
     }
     function getVersion()external pure returns(string memory){
-        return "1.1";
+        return "1.2";
     }
     function awardWinnerV1(uint256 drawTimeStamp)
         external
