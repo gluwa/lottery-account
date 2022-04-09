@@ -144,7 +144,7 @@ describe('Boundary test for drawing and ticket issuance', function () {
     const randomMax = 99999999;
     const randomMin = 10000000;
 
-    await prizeLinkedAccountVault.makeDrawV1(drawDate,Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
+    await prizeLinkedAccountVault.makeDrawV1_NoValidation(drawDate,Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
     var { 0: owners, 1: tickets, 2: winningTicket, 3: balanceEachDraw } = await prizeLinkedAccountVault.getDrawDetails(drawDate);
 
     expect(totalInDraw).to.equal(owners.length);
@@ -183,7 +183,7 @@ describe('Boundary test for drawing and ticket issuance', function () {
     }
     const randomMax = 99999999;
     const randomMin = 10000000;    
-    await prizeLinkedAccountVault.makeDrawV1(drawDate, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));   
+    await prizeLinkedAccountVault.makeDrawV1_NoValidation(drawDate, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));   
     var winnerTxn = await prizeLinkedAccountVault.awardWinnerV1(drawDate);
     var receiptWinner = await winnerTxn.wait();
     var winnerEvent = receiptWinner.events.filter(function (one) {

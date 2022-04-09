@@ -459,7 +459,7 @@ describe('Withdraw test', function () {
 
         const randomMax = 99999999;
         const randomMin = 10000000;
-        await prizeLinkedAccountVault.makeDrawV1(drawDate2, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
+        await prizeLinkedAccountVault.makeDrawV1_NoValidation(drawDate2, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
 
         var { 0: min1, 1: max1 } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate1);
         var ticketUpperVal1 = (depositAmount * BigInt(10)) / BigInt(10 ** 18);
@@ -524,10 +524,6 @@ describe('Withdraw test', function () {
 
         await prizeLinkedAccountVault.regenerateTicketForNextDraw(drawDate2);
 
-        var ticketRemoved1 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate1);
-        var ticketRemoved2 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate2);
-        expect(ticketRemoved1).to.equal(0);
-        expect(ticketRemoved2).to.equal(0);
 
         await prizeLinkedAccountVault.withdrawFor(users1[1], depositAmount / BigInt(2));
         await prizeLinkedAccountVault.withdrawFor(users1[2], depositAmount / BigInt(2));
@@ -539,12 +535,6 @@ describe('Withdraw test', function () {
         await prizeLinkedAccountVault.withdrawFor(users2[7], depositAmount / BigInt(2));
         await prizeLinkedAccountVault.withdrawFor(users2[8], depositAmount / BigInt(2));
         await prizeLinkedAccountVault.withdrawFor(users2[10], depositAmount / BigInt(2));
-
-
-        ticketRemoved1 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate1);
-        ticketRemoved2 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate2);
-        expect(ticketRemoved1).to.equal(BigInt(depositAmount * BigInt(2) / BigInt(10 ** 18)));
-        expect(ticketRemoved2).to.equal(BigInt(depositAmount * BigInt(5) / BigInt(10 ** 18)));
 
         var { 0: min1, 1: max1 } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate1);
         var balance1 = await prizeLinkedAccountVault.getBalanceEachDraw(drawDate1);
@@ -610,13 +600,9 @@ describe('Withdraw test', function () {
         await prizeLinkedAccountVault.regenerateTicketForNextDraw(drawDate2);
 
         var { 0: min1, 1: max1 } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate1);
-        var balance1 = await prizeLinkedAccountVault.getBalanceEachDraw(drawDate1);
-        var ticketRemoved1 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate1);
-        var ticketRemoved2 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate2);
-        expect(ticketRemoved1).to.equal(BigInt(depositAmount * BigInt(2) / BigInt(10 ** 18)));
+        var balance1 = await prizeLinkedAccountVault.getBalanceEachDraw(drawDate1);      
         expect(balance1).to.equal(BigInt(depositAmount * BigInt(8)));
         expect(balance1.toBigInt() * (BigInt(1 + testHelper.winningChanceFactor)) / BigInt(10 ** 18)).to.equal(max1);
-        expect(ticketRemoved2).to.equal(0);
 
 
         await prizeLinkedAccountVault.withdrawFor(users2[2], depositAmount / BigInt(2));
@@ -626,11 +612,6 @@ describe('Withdraw test', function () {
         await prizeLinkedAccountVault.withdrawFor(users2[8], depositAmount / BigInt(2));
         await prizeLinkedAccountVault.withdrawFor(users2[10], depositAmount / BigInt(2));
 
-
-        ticketRemoved1 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate1);
-        ticketRemoved2 = await prizeLinkedAccountVault.getRemovedTicketsEachDraw(drawDate2);
-        expect(ticketRemoved1).to.equal(BigInt(depositAmount * BigInt(2) / BigInt(10 ** 18)));
-        expect(ticketRemoved2).to.equal(BigInt(depositAmount * BigInt(3) / BigInt(10 ** 18)));
 
         balance1 = await prizeLinkedAccountVault.getBalanceEachDraw(drawDate1);
         expect(balance1).to.equal(BigInt(depositAmount * BigInt(8)));
