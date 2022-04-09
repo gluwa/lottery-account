@@ -12,11 +12,26 @@ contract PrizeLinkedAccountVault is
 {
     event WinnerSelected(address winner, uint256 reward);
     event Invested(address indexed recipient, uint256 amount);
-    event DrawResult(uint256 indexed drawTimeStamp, uint256 winningTicket);
+    event DrawResult(uint256 indexed drawTimeStamp, uint256 winningTicket, uint256 min, uint256 max);
     event TopUpBalance(address indexed recipient, uint256 amount);
     event WithdrawBalance(address indexed recipient, uint256 amount);
-    event AccountSavinSettingsUpdated(address opperator, uint32 standardInterestRate, uint32 standardInterestRatePercentageBase, uint256 budget, uint256 minimumDeposit, uint64 ticketPerToken);
-    event GluwaPrizeDrawSettingsUpdated(address opperator, uint8 cutOffHour, uint8 cutOffMinute, uint16 processingCap, uint16 winningChanceFactor, uint128 ticketRangeFactor, uint8 lowerLimitPercentage);
+    event AccountSavinSettingsUpdated(
+        address opperator,
+        uint32 standardInterestRate,
+        uint32 standardInterestRatePercentageBase,
+        uint256 budget,
+        uint256 minimumDeposit,
+        uint64 ticketPerToken
+    );
+    event GluwaPrizeDrawSettingsUpdated(
+        address opperator,
+        uint8 cutOffHour,
+        uint8 cutOffMinute,
+        uint16 processingCap,
+        uint16 winningChanceFactor,
+        uint128 ticketRangeFactor,
+        uint8 lowerLimitPercentage
+    );
 
     using DateTimeModel for DateTimeModel;
 
@@ -51,12 +66,14 @@ contract PrizeLinkedAccountVault is
             winningChanceFactor,
             ticketPerToken
         );
-        _processingCap = processingCap;   
+        _processingCap = processingCap;
         _lowerLimitPercentage = lowerLimitPercentage;
     }
-    function getVersion()external pure returns(string memory){
+
+    function getVersion() external pure returns (string memory) {
         return "1.2";
     }
+
     function awardWinnerV1(uint256 drawTimeStamp)
         external
         onlyOperator
@@ -88,6 +105,26 @@ contract PrizeLinkedAccountVault is
         onlyOperator
         returns (uint256)
     {
+        (uint256 min, uint256 max) = findMinMaxForDraw(drawTimeStamp);
+        return _makeDraw(drawTimeStamp, min, max, seed);
+    }
+
+    /// @dev when the number of participants are very high findMinMaxForDraw must be call separatedly to be provided to function
+    function makeDrawV2(
+        uint256 drawTimeStamp,
+        uint256 min,
+        uint256 max,
+        uint256 seed
+    ) external onlyOperator returns (uint256) {
+        return _makeDraw(drawTimeStamp, min, max, seed);
+    }
+
+    function _makeDraw(
+        uint256 drawTimeStamp,
+        uint256 min,
+        uint256 max,
+        uint256 seed
+    ) private returns (uint256) {
         require(
             drawTimeStamp <= now,
             "GluwaPrizeLinkedAccount: The draw can only be made on or after the draw date time"
@@ -97,8 +134,8 @@ contract PrizeLinkedAccountVault is
         assembly {
             mstore(add(temp, 32), xor(seed, sender))
         }
-        uint256 drawWinner = _findDrawWinner(drawTimeStamp, temp);
-        emit DrawResult(drawTimeStamp, drawWinner);
+        uint256 drawWinner = _findDrawWinner(drawTimeStamp, min, max, temp);
+        emit DrawResult(drawTimeStamp, drawWinner, min, max);
         return drawWinner;
     }
 
@@ -163,7 +200,9 @@ contract PrizeLinkedAccountVault is
                 deposit.owner,
                 deposit.creationDate,
                 _addressSavingAccountMapping[deposit.owner].balance,
-                _convertDepositToTotalTicket(_addressSavingAccountMapping[deposit.owner].balance)
+                _convertDepositToTotalTicket(
+                    _addressSavingAccountMapping[deposit.owner].balance
+                )
             );
         } else {
             _createTicketForDeposit(
@@ -210,12 +249,15 @@ contract PrizeLinkedAccountVault is
         uint256 next2ndDraw = _calculateDrawTime(now);
         uint256 nextDraw = next2ndDraw.sub(86400);
         _removeTicket(owner, next2ndDraw, amount, newIssued);
-        if (_drawParticipantTicket[nextDraw][owner].length > 0 && _drawWinner[nextDraw] == 0) {
+        if (
+            _drawParticipantTicket[nextDraw][owner].length > 0 &&
+            _drawWinner[nextDraw] == 0
+        ) {
             _removeTicket(owner, nextDraw, amount, newIssued);
         }
         _withdraw(owner, recipient, amount);
         return true;
-    }   
+    }
 
     function getEligibleAddressPendingAddedToDraw(uint256 drawTimeStamp)
         external
@@ -370,22 +412,37 @@ contract PrizeLinkedAccountVault is
             winningChanceFactor,
             ticketRangeFactor
         );
-        emit AccountSavinSettingsUpdated(msg.sender, standardInterestRate, standardInterestRatePercentageBase, budget, minimumDeposit, ticketPerToken);
-        emit GluwaPrizeDrawSettingsUpdated(msg.sender, cutOffHour, cutOffMinute, processingCap, winningChanceFactor, ticketRangeFactor, lowerLimitPercentage);
+        emit AccountSavinSettingsUpdated(
+            msg.sender,
+            standardInterestRate,
+            standardInterestRatePercentageBase,
+            budget,
+            minimumDeposit,
+            ticketPerToken
+        );
+        emit GluwaPrizeDrawSettingsUpdated(
+            msg.sender,
+            cutOffHour,
+            cutOffMinute,
+            processingCap,
+            winningChanceFactor,
+            ticketRangeFactor,
+            lowerLimitPercentage
+        );
     }
 
     function getPrizeLinkedAccountSettings()
         external
         view
-        returns (            
-            uint64 ticketPerToken,           
-            uint16 processingCap,            
+        returns (
+            uint64 ticketPerToken,
+            uint16 processingCap,
             uint8 lowerLimitPercentage
         )
     {
         ticketPerToken = _ticketPerToken;
         processingCap = _processingCap;
-        lowerLimitPercentage = _lowerLimitPercentage;        
+        lowerLimitPercentage = _lowerLimitPercentage;
     }
 
     function getSavingAcountFor(address owner)

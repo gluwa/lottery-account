@@ -34,7 +34,6 @@ contract GluwaPrizeDraw is Initializable, Context {
     mapping(uint256 => address[]) internal _drawParticipant;
     mapping(uint256 => uint256) internal _drawWinner;
     mapping(uint256 => uint256) internal _balanceEachDraw;
-    mapping(uint256 => uint256) internal _removedTicketsEachDraw;
     mapping(uint256 => bool) internal _prizePayingStatus;
 
     event TicketCreated(
@@ -136,22 +135,31 @@ contract GluwaPrizeDraw is Initializable, Context {
                 }
             }
         }
-        max =
-            max +
+        if (
             (_winningChanceFactor *
-                _convertDepositToTotalTicket(_balanceEachDraw[drawTimeStamp])) -
-            totalWithdrawGap;
+                _convertDepositToTotalTicket(_balanceEachDraw[drawTimeStamp])) >
+            totalWithdrawGap
+        ) {
+            max =
+                max +
+                (_winningChanceFactor *
+                    _convertDepositToTotalTicket(
+                        _balanceEachDraw[drawTimeStamp]
+                    )) -
+                totalWithdrawGap;
+        }
     }
 
-    function _findDrawWinner(uint256 drawTimeStamp, bytes memory externalFactor)
-        internal
-        returns (uint256)
-    {
+    function _findDrawWinner(
+        uint256 drawTimeStamp,
+        uint256 min,
+        uint256 max,
+        bytes memory externalFactor
+    ) internal returns (uint256) {
         require(
             _drawWinner[drawTimeStamp] == 0,
             "GluwaPrizeDraw: the draw has been made"
         );
-        (uint256 min, uint256 max) = findMinMaxForDraw(drawTimeStamp);
         _drawWinner[drawTimeStamp] = _randomNumber(min, max, externalFactor);
         return _drawWinner[drawTimeStamp];
     }
@@ -309,11 +317,9 @@ contract GluwaPrizeDraw is Initializable, Context {
                         .lower = 0;
                     _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
                         .upper = 0;
-                    _removedTicketsEachDraw[drawTimeStamp] += issuedTickets;
                 } else {
                     _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
                         .lower += ticketsToRemove;
-                    _removedTicketsEachDraw[drawTimeStamp] += ticketsToRemove;
                     break;
                 }
             }

@@ -97,7 +97,7 @@ describe('Ticket Reissuance', function () {
       totalInDraw1++;
     }
    
-    await prizeLinkedAccountVault.makeDrawV1(drawDate1, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
+    await prizeLinkedAccountVault.makeDrawV1_NoValidation(drawDate1, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
     var { 0: owners1, 1: tickets1, 2: winningTicket1, 3: balanceEachDraw1 } = await prizeLinkedAccountVault.getDrawDetails(drawDate1);
 
     var winner1 = await prizeLinkedAccountVault.getDrawWinner(drawDate1);
@@ -150,7 +150,7 @@ describe('Ticket Reissuance', function () {
     expect((await prizeLinkedAccountVault.getEligibleAddressPendingAddedToDraw(drawDate2)).length).to.equal(0);
 
 
-    await prizeLinkedAccountVault.makeDrawV1(drawDate2, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
+    await prizeLinkedAccountVault.makeDrawV1_NoValidation(drawDate2, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
 
     var { 0: owners, 1: tickets, 2: winningTicket2, 3: balanceEachDraw2 } = await prizeLinkedAccountVault.getDrawDetails(drawDate2);
 
