@@ -379,7 +379,7 @@ describe('Prize Draw', function () {
   });
 
   it('check if winning number within max and min - seed not 0 - makeDrawV2', async function () {
-    var depositTime = ((Date.now() / 1000) | 0) - testHelper.TOTAL_SECONDS_PER_DAY - 10;
+    var depositTime = ((Date.now() / 1000) | 0) - testHelper.TOTAL_SECONDS_PER_DAY * 2;
     var drawDate = BigInt(0);
     for (var i = 0; i < 10; i++) {
       var temp = await ethers.Wallet.createRandom();
@@ -390,7 +390,7 @@ describe('Prize Draw', function () {
       });
       var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
       await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
-      var accountTxn = await testHelper.createPrizeLinkedAccountSandBox(temp.address, depositAmount, depositTime, temp.address);
+      var accountTxn = await testHelper.createPrizeLinkedAccountSandBox(prizeLinkedAccountVault, temp.address, depositAmount, depositTime, temp.address);
       var receipt = await accountTxn.wait();
 
       var ticketEvent = receipt.events.filter(function (one) {
@@ -569,9 +569,7 @@ describe('Prize Draw', function () {
 
     var receipt = await makeDrawV1Txn.wait();
     expect(receipt.events.length).to.equal(1);
-    var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
-
-    await expect(makeDrawV1Txn).to.emit(prizeLinkedAccountVault, "DrawResult").withArgs(drawDate, receipt.events[0].args['winningTicket'], min, max);
+    await expect(makeDrawV1Txn).to.emit(prizeLinkedAccountVault, "DrawResult").withArgs(drawDate, receipt.events[0].args['winningTicket'], 999999999999999, 999999999999999);
 
     var { 0: owners, 1: tickets, 2: winningTicket, 3: balanceEachDraw } = await prizeLinkedAccountVault.getDrawDetails(drawDate);
 
@@ -652,9 +650,9 @@ describe('Prize Draw', function () {
 
     var receipt = await makeDrawV1Txn.wait();
     expect(receipt.events.length).to.equal(1);
-    var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
 
-    await expect(makeDrawV1Txn).to.emit(prizeLinkedAccountVault, "DrawResult").withArgs(drawDate1, receipt.events[0].args['winningTicket'], min, max);
+    
+    await expect(makeDrawV1Txn).to.emit(prizeLinkedAccountVault, "DrawResult").withArgs(drawDate1, receipt.events[0].args['winningTicket'], 999999999999999, 999999999999999);
     
     var { 0: owners1, 1: tickets1, 2: winningTicket1, 3: balanceEachDraw1 } = await prizeLinkedAccountVault.getDrawDetails(drawDate1);
 
@@ -694,11 +692,11 @@ describe('Prize Draw', function () {
 
     const randomMax = 99999999;
     const randomMin = 10000000;
-    var makeDrawV1Txn = await prizeLinkedAccountVault.makeDrawV1(drawDate2, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
+    var makeDrawV1Txn = await prizeLinkedAccountVault.makeDrawV1_NoValidation(drawDate2, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
 
     var receipt = await makeDrawV1Txn.wait();
     expect(receipt.events.length).to.equal(1);
-    var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
+    var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate2);
 
     await expect(makeDrawV1Txn).to.emit(prizeLinkedAccountVault, "DrawResult").withArgs(drawDate2, receipt.events[0].args['winningTicket'], min, max);
 
