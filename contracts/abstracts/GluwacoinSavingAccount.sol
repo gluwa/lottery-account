@@ -193,15 +193,16 @@ contract GluwacoinSavingAccount is Initializable, Context {
         if (isEarning) {
             account.earning += amount;
         } 
+        uint depositId = _depositIndex.nextIdx;
         bytes32 depositHash = GluwaAccountModel.generateHash(
-            account.idx,
+            depositId,
             dateTime,
             amount,
             address(this),
             owner
         );
         _depositStorage[depositHash] = GluwaAccountModel.Deposit({
-            idx: _depositIndex.nextIdx,
+            idx: depositId,
             owner: owner,
             creationDate: dateTime,
             amount: amount,
