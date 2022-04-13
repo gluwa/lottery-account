@@ -71,7 +71,7 @@ contract PrizeLinkedAccountVault is
     }
 
     function getVersion() external pure returns (string memory) {
-        return "1.2";
+        return "1.4";
     }
 
     function awardWinnerV1(uint256 drawTimeStamp)
@@ -157,7 +157,7 @@ contract PrizeLinkedAccountVault is
         );
         return isSuccess;
     }
-
+ 
     function depositPrizedLinkAccount(address owner, uint256 amount)
         external
         onlyOperator
