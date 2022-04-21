@@ -118,7 +118,7 @@ describe('Invest from Vault', function () {
     await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount, user1.address);   
     var investAmount = depositAmount - BigInt(1) - depositAmount * testHelper.lowerLimitPercentage / BigInt(100);
     await expect(
-      prizeLinkedAccountVault.invest("0x0000000000000000000000000000000000000000", investAmount)   
+      prizeLinkedAccountVault.invest(testHelper.ADDRESS_0, investAmount)   
       ).to.be.revertedWith("GluwaPrizeLinkedAccount: Recipient address for investment must be defined.");
 
   });

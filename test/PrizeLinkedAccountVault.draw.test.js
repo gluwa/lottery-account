@@ -256,6 +256,142 @@ describe('Prize Draw', function () {
     expect(winningticket - min).to.be.greaterThanOrEqual(0);
   });
 
+  it('check if winner can only have 1 ticket - one user', async function () {
+    await prizeLinkedAccountVault.setPrizeLinkedAccountSettings(
+      testHelper.standardInterestRate,
+      testHelper.standardInterestRatePercentageBase,
+      testHelper.budget,
+      1,
+      1,
+      testHelper.cutOffHour,
+      testHelper.cutOffMinute,
+      testHelper.processingCap,
+      0,
+      1,
+      testHelper.lowerLimitPercentage
+    );
+
+    var depositTime = ((Date.now() / 1000) | 0) - testHelper.TOTAL_SECONDS_PER_DAY;
+    var totalTickets = BigInt(10);
+    await gluwaCoin.connect(user1).approve(prizeLinkedAccountVault.address, totalTickets * testHelper.decimalsVal);
+    var accountTxn = await testHelper.createPrizeLinkedAccountSandBox(prizeLinkedAccountVault, user1.address, testHelper.decimalsVal, depositTime, user1.address);
+
+    var receipt = await accountTxn.wait();
+    var ticketEvent = receipt.events.filter(function (one) {
+      return one.event == "TicketCreated";
+    })[0].args;
+    var drawDate = ticketEvent[0];
+
+    for (var i = 0; i < totalTickets - BigInt(1); i++) {
+      await testHelper.depositPrizeLinkedAccountSandBox(prizeLinkedAccountVault, user1.address, testHelper.decimalsVal, depositTime);
+    }
+    
+
+    var ticketList = await prizeLinkedAccountVault.getTickerIdsByOwnerAndDrawFor(drawDate, user1.address);
+
+    var totalTickets_1 = BigInt(0);
+    for (var i = 0; i < ticketList.length; i++) {
+      const {
+        0: id,
+        1: owner,
+        2: lower,
+        3: upper
+      } = await prizeLinkedAccountVault.getTicketRangeById(ticketList[i]);
+      totalTickets_1 += upper.toBigInt() - lower.toBigInt() + BigInt(1);
+      expect(lower).to.equal(upper);
+    }
+    expect(totalTickets).to.equal(totalTickets_1);
+
+    await prizeLinkedAccountVault.withdrawFor(user1.address, testHelper.decimalsVal);
+    await prizeLinkedAccountVault.withdrawFor(user1.address, testHelper.decimalsVal);
+    var totalTickets_2 = BigInt(0);
+    for (var i = 0; i < ticketList.length; i++) {
+      const {
+        0: id,
+        1: owner,
+        2: lower,
+        3: upper
+      } = await prizeLinkedAccountVault.getTicketRangeById(ticketList[i]);
+      if (upper.toNumber() > 0) {
+        totalTickets_2 += upper.toBigInt() - lower.toBigInt() + BigInt(1);
+      }
+      expect(lower).to.equal(upper);
+    }
+    expect(totalTickets_2).to.equal(BigInt(8));
+    var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
+    expect(max).to.equal(totalTickets);
+
+    const randomMax = 99999999;
+    const randomMin = 10000000;
+    await prizeLinkedAccountVault.makeDrawV1_NoValidation(drawDate, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
+    var winner = await prizeLinkedAccountVault.getDrawWinner(drawDate);
+    expect(winner).to.equal(user1.address);
+  });
+
+  it('check if winner can only have 1 ticket - multiple users', async function () {
+    await prizeLinkedAccountVault.setPrizeLinkedAccountSettings(
+      testHelper.standardInterestRate,
+      testHelper.standardInterestRatePercentageBase,
+      testHelper.budget,
+      1,
+      1,
+      testHelper.cutOffHour,
+      testHelper.cutOffMinute,
+      testHelper.processingCap,
+      0,
+      1,
+      testHelper.lowerLimitPercentage
+    );
+
+   
+    var drawDate = BigInt(0);
+
+    var users = [];
+
+    var depositTime = ((Date.now() / 1000) | 0);
+
+    var ticketIds = [];
+    for (var i = 0; i < 10; i++) {
+      var temp = await ethers.Wallet.createRandom();
+      await gluwaCoin.mint(temp.address, mintAmount);
+      await bank1.sendTransaction({
+        to: temp.address,
+        value: ethers.utils.parseEther("1")
+      });
+      users[i] = temp.address;
+      var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, testHelper.decimalsVal);
+      await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
+      var accountTxn = await testHelper.createPrizeLinkedAccountSandBox(prizeLinkedAccountVault, temp.address, testHelper.decimalsVal, depositTime, temp.address);
+      var receipt = await accountTxn.wait();
+
+      var ticketEvent = receipt.events.filter(function (one) {
+        return one.event == "TicketCreated";
+      })[0].args;
+
+      var drawDateTemp = ticketEvent[0];
+
+      if (drawDate == BigInt(0)) {
+        drawDate = drawDateTemp;
+      }
+
+      ticketIds[i] = ticketEvent[1];
+      expect(ticketEvent[3]).to.equal(ticketEvent[4]);
+
+      if (drawDate < drawDateTemp) {
+        break;
+      }
+    }    
+
+    var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
+    expect(max).to.equal(10);
+
+    const randomMax = 99999999;
+    const randomMin = 10000000;
+    await prizeLinkedAccountVault.makeDrawV1_NoValidation(drawDate, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
+    var winner = await prizeLinkedAccountVault.getDrawWinner(drawDate);
+    expect(winner).not.to.equal(testHelper.ADDRESS_0);
+    expect(users.filter(item => item == winner).length).to.equal(1);
+  });
 
   it('check if each participant having valid tickets', async function () {
     var drawDate = BigInt(0);
@@ -409,7 +545,7 @@ describe('Prize Draw', function () {
     const randomMax = 99999999;
     const randomMin = 10000000;
     var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
-    var winningticket = await prizeLinkedAccountVault.callStatic.makeDrawV2(drawDate,min, max, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
+    var winningticket = await prizeLinkedAccountVault.callStatic.makeDrawV2(drawDate, min, max, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
 
     expect(max - winningticket).to.be.greaterThanOrEqual(0);
     expect(winningticket - min).to.be.greaterThanOrEqual(0);
@@ -456,7 +592,7 @@ describe('Prize Draw', function () {
       receipt.events[1].args['lowerLimitPercentage']
     );
     expect(BigInt(receipt.events[1].args['lowerLimitPercentage'])).to.equal(testHelper.lowerLimitPercentage);
-
+    
     var totalInDraw = 0;
     var drawDate = BigInt(0);
     for (var i = 0; i < 30; i++) {
@@ -651,9 +787,9 @@ describe('Prize Draw', function () {
     var receipt = await makeDrawV1Txn.wait();
     expect(receipt.events.length).to.equal(1);
 
-    
+
     await expect(makeDrawV1Txn).to.emit(prizeLinkedAccountVault, "DrawResult").withArgs(drawDate1, receipt.events[0].args['winningTicket'], 999999999999999, 999999999999999);
-    
+
     var { 0: owners1, 1: tickets1, 2: winningTicket1, 3: balanceEachDraw1 } = await prizeLinkedAccountVault.getDrawDetails(drawDate1);
 
     var winner1 = await prizeLinkedAccountVault.getDrawWinner(drawDate1);

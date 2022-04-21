@@ -361,7 +361,6 @@ describe('Withdraw test', function () {
             }
         }
         var expectedNewTotal = totalTickets_1 - BigInt(2);
-        console.info(expectedNewTotal);
         expect(expectedNewTotal).to.equal(totalTickets_2);
         var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
         expect(max).to.equal(BigInt(testHelper.winningChanceFactor + 1) * (totalTickets - min.toBigInt() + BigInt(1)) + min.toBigInt() - BigInt(1));
