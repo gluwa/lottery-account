@@ -96,7 +96,7 @@ const ticketPerToken = 1;
 const processingCap = 110;
 
 const errorOnlyAdmin = "Restricted to Admins.";
-
+const ADDRESS_0 = "0x0000000000000000000000000000000000000000";
 
 module.exports = {
     getTimeFromTimestamp, createWallets,
@@ -107,6 +107,6 @@ module.exports = {
     name, symbol, decimals,
     lowerLimitPercentage, standardInterestRate, standardInterestRatePercentageBase, cutOffHour, cutOffMinute,
     winningChanceFactor, ticketRangeFactor,
-    decimalsVal, budget, ticketPerToken, processingCap,
+    decimalsVal, budget, ticketPerToken, processingCap, ADDRESS_0,
     errorOnlyAdmin
 }

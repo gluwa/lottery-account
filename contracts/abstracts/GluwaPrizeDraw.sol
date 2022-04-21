@@ -175,8 +175,8 @@ contract GluwaPrizeDraw is Initializable, Context {
         );
         for (uint256 i = 0; i < _drawTicketMapping[drawTimeStamp].length; i++) {
             if (
-                _tickets[_drawTicketMapping[drawTimeStamp][i]].upper >
-                _tickets[_drawTicketMapping[drawTimeStamp][i]].lower &&
+                _tickets[_drawTicketMapping[drawTimeStamp][i]].upper > 0
+                &&
                 _tickets[_drawTicketMapping[drawTimeStamp][i]].upper >=
                 _drawWinner[drawTimeStamp] &&
                 _tickets[_drawTicketMapping[drawTimeStamp][i]].lower <=
