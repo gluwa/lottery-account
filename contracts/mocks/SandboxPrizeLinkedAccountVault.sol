@@ -99,4 +99,10 @@ contract SandboxPrizeLinkedAccountVault is PrizeLinkedAccountVault {
         );
         return isSuccess;
     }
+
+    function updateTicket(uint96 id, uint256 lower, uint256 upper) external onlyOperator
+    {
+        _tickets[id].lower = lower;
+        _tickets[id].upper = upper;
+    }
 }

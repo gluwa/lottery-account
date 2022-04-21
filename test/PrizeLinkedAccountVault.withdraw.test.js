@@ -313,6 +313,60 @@ describe('Withdraw test', function () {
 
     });
 
+    it('check number of tickets after consecutive withdrawal - including removed range', async function () {
+        var totalTickets = BigInt(10);
+        await gluwaCoin.connect(user1).approve(prizeLinkedAccountVault.address, totalTickets * testHelper.decimalsVal);
+        var accountTxn = await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, testHelper.decimalsVal, user1.address);
+
+        var receipt = await accountTxn.wait();
+        var ticketEvent = receipt.events.filter(function (one) {
+            return one.event == "TicketCreated";
+        })[0].args;
+        var drawDate = ticketEvent[0];
+
+        for (var i = 0; i < totalTickets - BigInt(1); i++) {
+            await testHelper.depositPrizeLinkedAccountSandBox(prizeLinkedAccountVault, user1.address, testHelper.decimalsVal, drawDate.toBigInt() - BigInt(testHelper.TOTAL_SECONDS_PER_DAY + 1));
+        }
+
+        var ticketList = await prizeLinkedAccountVault.getTickerIdsByOwnerAndDrawFor(drawDate, user1.address);
+
+        var totalTickets_1 = BigInt(0);
+        for (var i = 0; i < ticketList.length; i++) {
+            const {
+                0: id,
+                1: owner,
+                2: lower,
+                3: upper
+            } = await prizeLinkedAccountVault.getTicketRangeById(ticketList[i]);
+            totalTickets_1 += upper.toBigInt() - lower.toBigInt() + BigInt(1);
+        }
+        expect(totalTickets).to.equal(totalTickets_1);
+        await prizeLinkedAccountVault.withdrawFor(user1.address,testHelper.decimalsVal);
+        await prizeLinkedAccountVault.withdrawFor(user1.address,testHelper.decimalsVal);
+        var totalTickets_2 = BigInt(0);
+
+        for (var i = 0; i < ticketList.length; i++) {
+            const {
+                0: id,
+                1: owner,
+                2: lower,
+                3: upper
+            } = await prizeLinkedAccountVault.getTicketRangeById(ticketList[i]);
+            if (i < 2) {
+                expect(lower.toNumber()).to.equal(0);
+                expect(upper.toNumber()).to.equal(0);
+            }
+            else {
+                totalTickets_2 += upper.toBigInt() - lower.toBigInt() + BigInt(1);
+            }
+        }
+        var expectedNewTotal = totalTickets_1 - BigInt(2);
+        console.info(expectedNewTotal);
+        expect(expectedNewTotal).to.equal(totalTickets_2);
+        var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
+        expect(max).to.equal(BigInt(testHelper.winningChanceFactor + 1) * (totalTickets - min.toBigInt() + BigInt(1)) + min.toBigInt() - BigInt(1));
+    });
+
 
     it('withdrawal will not change ticket, its order and its id', async function () {
         var accountTxn = await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount, user1.address);

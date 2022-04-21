@@ -305,6 +305,12 @@ contract GluwaPrizeDraw is Initializable, Context {
                 i < _drawParticipantTicket[drawTimeStamp][owner_].length;
                 i++
             ) {
+                if (
+                    _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
+                        .upper == 0
+                ) {
+                    continue;
+                }
                 issuedTickets =
                     _tickets[_drawParticipantTicket[drawTimeStamp][owner_][i]]
                         .upper -
