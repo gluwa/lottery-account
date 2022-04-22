@@ -174,9 +174,7 @@ contract GluwaPrizeDraw is Initializable, Context {
             "GluwaPrizeDraw: the draw has not been made"
         );
         for (uint256 i = 0; i < _drawTicketMapping[drawTimeStamp].length; i++) {
-            if (
-                _tickets[_drawTicketMapping[drawTimeStamp][i]].upper > 0
-                &&
+            if (                
                 _tickets[_drawTicketMapping[drawTimeStamp][i]].upper >=
                 _drawWinner[drawTimeStamp] &&
                 _tickets[_drawTicketMapping[drawTimeStamp][i]].lower <=
