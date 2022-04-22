@@ -71,7 +71,7 @@ contract PrizeLinkedAccountVault is
     }
 
     function getVersion() external pure returns (string memory) {
-        return "1.6";
+        return "1.7";
     }
 
     function awardWinnerV1(uint256 drawTimeStamp)
