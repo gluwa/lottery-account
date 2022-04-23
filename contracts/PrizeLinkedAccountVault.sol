@@ -71,7 +71,7 @@ contract PrizeLinkedAccountVault is
     }
 
     function getVersion() external pure returns (string memory) {
-        return "1.7";
+        return "1.8";
     }
 
     function awardWinnerV1(uint256 drawTimeStamp)
@@ -224,6 +224,7 @@ contract PrizeLinkedAccountVault is
     }
 
     function withdraw(uint256 amount) external returns (bool) {
+        require(amount >= 10**uint256(_tokenDecimal), "GluwaPrizeLinkedAccount: Withdrwal amount is too small.");
         return _withdrawPrizedLinkAccount(_msgSender(), _msgSender(), amount);
     }
 
