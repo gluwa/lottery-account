@@ -49,6 +49,31 @@ describe('Withdraw test', function () {
 
     });
 
+    it('cannot self withdraw lesser than 1 token', async function () {
+        await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount, user1.address);
+
+        await expect(
+            prizeLinkedAccountVault.connect(user1).withdraw(testHelper.decimalsVal - BigInt(1))
+        ).to.be.revertedWith("GluwaPrizeLinkedAccount: Withdrawal amount is too small.");
+    });
+
+    it('can self withdraw 1 token', async function () {
+        await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount, user1.address);
+        await prizeLinkedAccountVault.connect(user1).withdraw(testHelper.decimalsVal);
+
+        const { 0: savingAccount_idx,
+            1: savingAccount_hash,
+            2: savingAccount_owner,
+            3: savingAccount_creationDate,
+            4: savingAccount_balance,
+            5: savingAccount_earning,
+            6: savingAccount_state,
+            7: savingAccount_securityReferenceHash } = (await prizeLinkedAccountVault.getSavingAcountFor(user1.address));
+
+        expect(savingAccount_balance).to.equal(depositAmount - testHelper.decimalsVal);
+    });
+
+   
     it('check number of tickets after withdrawal', async function () {
         var accountTxn = await testHelper.createPrizeLinkedAccountStandard(prizeLinkedAccountVault, user1.address, depositAmount, user1.address);
         var receipt = await accountTxn.wait();
@@ -204,8 +229,8 @@ describe('Withdraw test', function () {
             return one.event == "TicketCreated";
         })[0].args;
 
-        var drawDate1 = ticketEvent[0];       
-        var drawDate2 = drawDate1.toBigInt() + BigInt(testHelper.TOTAL_SECONDS_PER_DAY) ;
+        var drawDate1 = ticketEvent[0];
+        var drawDate2 = drawDate1.toBigInt() + BigInt(testHelper.TOTAL_SECONDS_PER_DAY);
 
         await prizeLinkedAccountVault.withdrawFor(user1.address, withdrawnTicket * testHelper.decimalsVal);
 
@@ -297,7 +322,7 @@ describe('Withdraw test', function () {
             }
             else {
                 if (i == 1) {
-                    var newLower = lower.toBigInt() - BigInt(1);                    
+                    var newLower = lower.toBigInt() - BigInt(1);
                     expect(newLower).to.equal(oldLower);
                     expect(upper.toBigInt()).to.equal(oldUpper);
                 }
@@ -341,8 +366,8 @@ describe('Withdraw test', function () {
             totalTickets_1 += upper.toBigInt() - lower.toBigInt() + BigInt(1);
         }
         expect(totalTickets).to.equal(totalTickets_1);
-        await prizeLinkedAccountVault.withdrawFor(user1.address,testHelper.decimalsVal);
-        await prizeLinkedAccountVault.withdrawFor(user1.address,testHelper.decimalsVal);
+        await prizeLinkedAccountVault.withdrawFor(user1.address, testHelper.decimalsVal);
+        await prizeLinkedAccountVault.withdrawFor(user1.address, testHelper.decimalsVal);
         var totalTickets_2 = BigInt(0);
 
         for (var i = 0; i < ticketList.length; i++) {
@@ -653,7 +678,7 @@ describe('Withdraw test', function () {
         await prizeLinkedAccountVault.regenerateTicketForNextDraw(drawDate2);
 
         var { 0: min1, 1: max1 } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate1);
-        var balance1 = await prizeLinkedAccountVault.getBalanceEachDraw(drawDate1);      
+        var balance1 = await prizeLinkedAccountVault.getBalanceEachDraw(drawDate1);
         expect(balance1).to.equal(BigInt(depositAmount * BigInt(8)));
         expect(balance1.toBigInt() * (BigInt(1 + testHelper.winningChanceFactor)) / BigInt(10 ** 18)).to.equal(max1);
 

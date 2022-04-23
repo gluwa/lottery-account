@@ -38,13 +38,13 @@ async function LuniverseContractInstancelize(){
         
     // input = await prizeLinkedAccountVault.populateTransaction.addOperator(owner.address);
     // receipt = await submitRawTxn(input, owner, ethers, provider);
-    input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
-        standardInterestRate,
-      standardInterestRatePercentageBase, budget, ticketPerToken,1,
-      cutOffHour, cutOffMinute, processingCap,winningChanceFactor, ticketRangeFactor, lowerLimitPercentage
-      );
-    res = await submitRawTxn(input, owner, ethers, provider);
-    console.log(res)
+    // input = await prizeLinkedAccountVault.populateTransaction.setPrizeLinkedAccountSettings(
+    //     standardInterestRate,
+    //   standardInterestRatePercentageBase, budget, ticketPerToken,1,
+    //   cutOffHour, cutOffMinute, processingCap,winningChanceFactor, ticketRangeFactor, lowerLimitPercentage
+    //   );
+    // res = await submitRawTxn(input, owner, ethers, provider);
+    //console.log(res)
     return {gluwaCoin, prizeLinkedAccountVault, owner, provider}
 }
 async function setupContractTesting(owner, user1, user2, mintAmount, depositAmount) {
