@@ -35,7 +35,7 @@ async function main(){
       cutOffHour, cutOffMinute, processingCap, winningChanceFactor, lowerLimitPercentage);
 
     receipt = await submitRawTxn(input, owner, ethers, provider);
-    console.log(receipt)
+    //console.log(receipt)
     input = await prizeLinkedAccountVault.populateTransaction.addAdmin(operator);
     receipt = await submitRawTxn(input, owner, ethers, provider);
     input = await prizeLinkedAccountVault.populateTransaction.addOperator(operator);
