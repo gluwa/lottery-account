@@ -224,7 +224,7 @@ contract PrizeLinkedAccountVault is
     }
 
     function withdraw(uint256 amount) external returns (bool) {
-        require(amount >= 10**uint256(_tokenDecimal), "GluwaPrizeLinkedAccount: Withdrwal amount is too small.");
+        require(amount >= 10**uint256(_tokenDecimal), "GluwaPrizeLinkedAccount: Withdrawal amount is too small.");
         return _withdrawPrizedLinkAccount(_msgSender(), _msgSender(), amount);
     }
 
