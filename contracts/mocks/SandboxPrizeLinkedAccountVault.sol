@@ -61,26 +61,7 @@ contract SandboxPrizeLinkedAccountVault is PrizeLinkedAccountVault {
         external
     {
         _balanceEachDraw[drawTimeStamp] = amount;
-    }
-
-    function createPrizedLinkAccountDummy(
-        address owner,
-        uint256 amount,
-        bytes calldata securityHash
-    ) external onlyOperator returns (bool) {
-        (, bytes32 depositHash) = _createSavingAccount(
-            owner,
-            amount,
-            now,
-            securityHash
-        );
-        bool isSuccess = _createPrizedLinkTickets(depositHash);
-        require(
-            _token.transferFrom(owner, address(this), amount),
-            "GluwaPrizeLinkedAccount: Unable to send amount to deposit to a Saving Account"
-        );
-        return isSuccess;
-    }
+    }    
 
     function depositPrizedLinkAccount(
         address owner,
