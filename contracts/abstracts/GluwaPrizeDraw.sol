@@ -174,7 +174,7 @@ contract GluwaPrizeDraw is Initializable, Context {
             "GluwaPrizeDraw: the draw has not been made"
         );
         for (uint256 i = 0; i < _drawTicketMapping[drawTimeStamp].length; i++) {
-            if (                
+            if (
                 _tickets[_drawTicketMapping[drawTimeStamp][i]].upper >=
                 _drawWinner[drawTimeStamp] &&
                 _tickets[_drawTicketMapping[drawTimeStamp][i]].lower <=
@@ -259,18 +259,18 @@ contract GluwaPrizeDraw is Initializable, Context {
         uint256 depositAmount,
         uint256 issuedTicket
     ) internal returns (bool) {
-        /// @dev when there is no ticket can be created, the process should not be stoped but the creating ticket will be ignored. 
-        if (issuedTicket == 0)
-        {
-            return false;
-        }
         uint96 ticketId = _drawTicketIndex.nextIdx;
         uint256 identifier_ = uint256(owner_);
         identifier_ |= uint256(ticketId) << 160;
-        uint256 ticketLower = _ticketRangeFactor +
-            _drawTicketCurrentUpper[drawTimeStamp];
-        ///@dev ticket range's upper and lower are inclusive
-        uint256 ticketUpper = ticketLower + issuedTicket - 1;
+        uint256 ticketLower;
+        uint256 ticketUpper;
+        if (issuedTicket > 0) {
+            ticketLower =
+                _ticketRangeFactor +
+                _drawTicketCurrentUpper[drawTimeStamp];
+            ///@dev ticket range's upper and lower are inclusive
+            ticketUpper = ticketLower + issuedTicket - 1;
+        }
         _tickets[ticketId] = DrawTicketModel.DrawTicket({
             identifier: identifier_,
             lower: ticketLower,
