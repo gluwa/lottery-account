@@ -259,10 +259,11 @@ contract GluwaPrizeDraw is Initializable, Context {
         uint256 depositAmount,
         uint256 issuedTicket
     ) internal returns (bool) {
-        require(
-            issuedTicket > 0,
-            "GluwaPrizeDraw: no ticket to be issued"
-        );
+        /// @dev when there is no ticket can be created, the process should not be stoped but the creating ticket will be ignored. 
+        if (issuedTicket == 0)
+        {
+            return false;
+        }
         uint96 ticketId = _drawTicketIndex.nextIdx;
         uint256 identifier_ = uint256(owner_);
         identifier_ |= uint256(ticketId) << 160;

@@ -339,17 +339,14 @@ contract PrizeLinkedAccountVault is
         external
         onlyOperator
         returns (bool)
-    {
-        require(
-            recipient != address(0),
-            "GluwaPrizeLinkedAccount: Recipient address for investment must be defined."
-        );
+    {        
         uint256 totalBalance = _token.balanceOf(address(this));
         require(
-            totalBalance.sub(amount) >=
+            recipient != address(0) &&
+            (totalBalance.sub(amount) >=
                 totalBalance.mul(_lowerLimitPercentage).div(100) ||
-                _totalDeposit == 0,
-            "GluwaPrizeLinkedAccount: the investment amount will make the total balance lower than the bottom threshold."
+                _totalDeposit == 0),
+            "GluwaPrizeLinkedAccount: Failed to validate the invest withdrawal."
         );
         emit Invested(recipient, amount);
         _token.transfer(recipient, amount);

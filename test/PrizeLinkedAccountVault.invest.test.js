@@ -119,7 +119,7 @@ describe('Invest from Vault', function () {
     var investAmount = depositAmount - BigInt(1) - depositAmount * testHelper.lowerLimitPercentage / BigInt(100);
     await expect(
       prizeLinkedAccountVault.invest(testHelper.ADDRESS_0, investAmount)   
-      ).to.be.revertedWith("GluwaPrizeLinkedAccount: Recipient address for investment must be defined.");
+      ).to.be.revertedWith("GluwaPrizeLinkedAccount: Failed to validate the invest withdrawal.");
 
   });
   
@@ -147,7 +147,7 @@ describe('Invest from Vault', function () {
     var investAmount = depositAmount + BigInt(1) - depositAmount * testHelper.lowerLimitPercentage / BigInt(100);
     await expect(
       prizeLinkedAccountVault.invest(lender.address, investAmount)
-      ).to.be.revertedWith("GluwaPrizeLinkedAccount: the investment amount will make the total balance lower than the bottom threshold.");
+      ).to.be.revertedWith("GluwaPrizeLinkedAccount: Failed to validate the invest withdrawal.");
   });
 
   it('can invest to withdraw completely when there is no saving account', async function () {
