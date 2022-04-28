@@ -425,8 +425,8 @@ describe('Withdraw test', function () {
             expect(ticketList_2[i]).to.equal(ticketList_3[i]);
         }
         expect(ticketList_2.length).to.equal(ticketList_3.length);
-        // Add the additional deposit is only 2 < 1,000,000 no ticket should be created11
-        expect(ticketList_2.length).to.equal(ticketList_1.length);
+        // Add the additional deposit is only 2 < 1,000,000, ticket has 0 range will be created
+        expect(ticketList_2.length).to.greaterThan(ticketList_1.length);
 
     });
 
