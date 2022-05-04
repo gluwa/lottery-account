@@ -853,7 +853,7 @@ describe('Prize Draw', function () {
     var winnerEvent2 = receiptWinner2.events.filter(function (one) {
       return one.event == "WinnerSelected";
     })[0].args;
-    var earnt2 = (earnt1 + BigInt(balanceEachDraw2)) * BigInt(testHelper.standardInterestRate) / BigInt(testHelper.standardInterestRatePercentageBase);
+    var earnt2 = (BigInt(balanceEachDraw2)) * BigInt(testHelper.standardInterestRate) / BigInt(testHelper.standardInterestRatePercentageBase) + earnt1;
 
     expect(winner2).to.equal(winnerEvent2[0]);
     expect(earnt2).to.equal(winnerEvent2[1]);

@@ -71,7 +71,7 @@ contract PrizeLinkedAccountVault is
     }
 
     function getVersion() external pure returns (string memory) {
-        return "1.9";
+        return "2.0";
     }
 
     function awardWinnerV1(uint256 drawTimeStamp)
@@ -85,10 +85,10 @@ contract PrizeLinkedAccountVault is
         );
         address winner = getDrawWinner(drawTimeStamp);
         uint256 prize = (
-            _totalPrizeBroughForward.add(_boostingFund).add(
+            _boostingFund.add(
                 _balanceEachDraw[drawTimeStamp]
             )
-        ).mul(_standardInterestRate).div(_standardInterestRatePercentageBase);
+        ).mul(_standardInterestRate).div(_standardInterestRatePercentageBase).add(_totalPrizeBroughForward);
         _prizePayingStatus[drawTimeStamp] = true;
         if (winner != address(0)) {
             _totalPrizeBroughForward = 0;
