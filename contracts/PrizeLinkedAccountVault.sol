@@ -491,5 +491,12 @@ contract PrizeLinkedAccountVault is
         return _getTickerIdsByOwnerAndDraw(drawTimeStamp, owner);
     }
 
+    function setTotalPrizeBroughForward(uint256 value) external onlyOperator {
+        _totalPrizeBroughForward = value;
+    }
+
+    function checkPrizeByTimestamp(uint256 drawTimeStamp) external view returns(uint256 prize){
+        return (_boostingFund.add(_balanceEachDraw[drawTimeStamp])).mul(_standardInterestRate).div(_standardInterestRatePercentageBase).add(_totalPrizeBroughForward);
+    }
     uint256[50] private __gap;
 }
