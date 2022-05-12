@@ -71,7 +71,7 @@ contract PrizeLinkedAccountVault is
     }
 
     function getVersion() external pure returns (string memory) {
-        return "2.0";
+        return "2.1";
     }
 
     function awardWinnerV1(uint256 drawTimeStamp)
@@ -94,7 +94,7 @@ contract PrizeLinkedAccountVault is
             _totalPrizeBroughForward = 0;
             _depositPrizedLinkAccount(winner, prize, now, true);
         } else {
-            _totalPrizeBroughForward = _totalPrizeBroughForward.add(prize);
+            _totalPrizeBroughForward = prize;
         }
         emit WinnerSelected(winner, prize);
         return true;
