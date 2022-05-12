@@ -285,7 +285,7 @@ describe('Prize Draw', function () {
     for (var i = 0; i < totalTickets - BigInt(1); i++) {
       await testHelper.depositPrizeLinkedAccountSandBox(prizeLinkedAccountVault, user1.address, testHelper.decimalsVal, depositTime);
     }
-    
+
 
     var ticketList = await prizeLinkedAccountVault.getTickerIdsByOwnerAndDrawFor(drawDate, user1.address);
 
@@ -343,7 +343,7 @@ describe('Prize Draw', function () {
       testHelper.lowerLimitPercentage
     );
 
-   
+
     var drawDate = BigInt(0);
 
     var users = [];
@@ -380,7 +380,7 @@ describe('Prize Draw', function () {
       if (drawDate < drawDateTemp) {
         break;
       }
-    }    
+    }
 
     var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
     expect(max).to.equal(10);
@@ -592,7 +592,7 @@ describe('Prize Draw', function () {
       receipt.events[1].args['lowerLimitPercentage']
     );
     expect(BigInt(receipt.events[1].args['lowerLimitPercentage'])).to.equal(testHelper.lowerLimitPercentage);
-    
+
     var totalInDraw = 0;
     var drawDate = BigInt(0);
     for (var i = 0; i < 30; i++) {
@@ -626,7 +626,6 @@ describe('Prize Draw', function () {
     const randomMin = 10000000;
     var makeDrawV1Txn = await prizeLinkedAccountVault.makeDrawV1_NoValidation(drawDate, Math.floor(Math.random() * (randomMax - randomMin) + randomMin));
     var receipt2 = await makeDrawV1Txn.wait();
-    // expect(receipt2.events.length).to.equal(1);
     var { 0: min, 1: max } = await prizeLinkedAccountVault.findMinMaxForDraw(drawDate);
 
     await expect(makeDrawV1Txn).to.emit(prizeLinkedAccountVault, "DrawResult").withArgs(drawDate, receipt2.events[0].args['winningTicket'], min, max);
@@ -661,14 +660,12 @@ describe('Prize Draw', function () {
       6: savingAccount_state1,
       7: savingAccount_securityReferenceHash1 } = (await prizeLinkedAccountVault.getSavingAcountFor(winner));
 
-
     expect(winner).to.equal(winnerEvent[0]);
     expect(earnt).to.equal(winnerEvent[1]);
     expect(savingAccount_earning1).to.equal(winnerEvent[1]);
     var totalAfterWinning = BigInt(savingAccount_balance) + earnt;
     expect(totalAfterWinning).to.equal(savingAccount_balance1);
     expect(balance).to.equal(await gluwaCoin.balanceOf(winner));
-
   });
 
   it('verify brought balance if there is no winner', async function () {
@@ -711,7 +708,6 @@ describe('Prize Draw', function () {
 
     var winner = await prizeLinkedAccountVault.getDrawWinner(drawDate);
 
-
     var winnerTxn = await prizeLinkedAccountVault.awardWinnerV1(drawDate);
     var receiptWinner = await winnerTxn.wait();
     var winnerEvent = receiptWinner.events.filter(function (one) {
@@ -722,11 +718,138 @@ describe('Prize Draw', function () {
     expect(winner).to.equal(winnerEvent[0]);
     expect(earnt).to.equal(winnerEvent[1]);
     expect(earnt).to.equal(await prizeLinkedAccountVault.getAmountBroughtToNextDraw());
+  });
 
+  it('verify brought balance will be used if no winner for multiple cycles - same balance every draw', async function () {
+    const boostingFund = depositAmount * BigInt(7);
+    await gluwaCoin.mint(user3.address, boostingFund);
+    await gluwaCoin.connect(user3).approve(prizeLinkedAccountVault.address, boostingFund);
+    await prizeLinkedAccountVault.addBoostingFund(user3.address, boostingFund);
+
+    // Balance each draw is unchanged
+    const expectedBalanceEachDraw = depositAmount * BigInt(10);
+    for (var j = 14; j > 0; j--) {
+      var depositTime = ((Date.now() / 1000) | 0) - testHelper.TOTAL_SECONDS_PER_DAY * j;
+      var drawDate = BigInt(0);
+      for (var i = 0; i < 10; i++) {
+        var temp = await ethers.Wallet.createRandom();
+        await gluwaCoin.mint(temp.address, mintAmount);
+        await bank2.sendTransaction({
+          to: temp.address,
+          value: ethers.utils.parseEther("1")
+        });
+        var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
+        await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
+        var accountTxn = await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,uint256,bytes)"](temp.address, depositAmount, depositTime, temp.address);
+        var receipt = await accountTxn.wait();
+
+        var ticketEvent = receipt.events.filter(function (one) {
+          return one.event == "TicketCreated";
+        })[0].args;
+
+        drawDate = ticketEvent[0];
+      }
+      // the ticket value to ensure no winner
+      var makeDrawV1Txn = await prizeLinkedAccountVault.makeDrawV1_Dummy(drawDate, 999999999999999);
+
+      var receipt = await makeDrawV1Txn.wait();
+      await expect(makeDrawV1Txn).to.emit(prizeLinkedAccountVault, "DrawResult").withArgs(drawDate, receipt.events[0].args['winningTicket'], 999999999999999, 999999999999999);
+      var { 0: owners, 1: tickets, 2: winningTicket, 3: balanceEachDraw } = await prizeLinkedAccountVault.getDrawDetails(drawDate);
+
+      // Only check after second draw
+      if (j < 14) {
+        var previousPrize = BigInt(15 - j - 1) * (BigInt(balanceEachDraw) + boostingFund) * BigInt(testHelper.standardInterestRate) / BigInt(testHelper.standardInterestRatePercentageBase);
+        expect(previousPrize).to.equal(await prizeLinkedAccountVault.getAmountBroughtToNextDraw());
+      }
+
+      var winner = await prizeLinkedAccountVault.getDrawWinner(drawDate);
+      var winnerTxn = await prizeLinkedAccountVault.awardWinnerV1(drawDate);
+      var receiptWinner = await winnerTxn.wait();
+      var winnerEvent = receiptWinner.events.filter(function (one) {
+        return one.event == "WinnerSelected";
+      })[0].args;
+
+      var prize = BigInt(15 - j) * (BigInt(balanceEachDraw) + boostingFund) * BigInt(testHelper.standardInterestRate) / BigInt(testHelper.standardInterestRatePercentageBase);
+      expect(winner).to.equal(winnerEvent[0]);
+      expect(expectedBalanceEachDraw).to.equal(balanceEachDraw);
+      // No winner is expected for each cycle
+      expect(winner).to.equal(testHelper.ADDRESS_0);
+      expect(prize).to.equal(winnerEvent[1]);
+      // Brought forward amount updated to new prize
+      expect(prize).to.equal(await prizeLinkedAccountVault.getAmountBroughtToNextDraw());
+    }
+
+    const expectedBroughtForwardAfter14Cycles = BigInt(14) * (BigInt(expectedBalanceEachDraw) + boostingFund) * BigInt(testHelper.standardInterestRate) / BigInt(testHelper.standardInterestRatePercentageBase);
+    expect(expectedBroughtForwardAfter14Cycles).to.equal(await prizeLinkedAccountVault.getAmountBroughtToNextDraw());
+  });
+
+  it('verify brought balance will be used if no winner for multiple cycles - different deposits every draw', async function () {
+    const boostingFund = depositAmount * BigInt(7);
+    await gluwaCoin.mint(user3.address, boostingFund);
+    await gluwaCoin.connect(user3).approve(prizeLinkedAccountVault.address, boostingFund);
+    await prizeLinkedAccountVault.addBoostingFund(user3.address, boostingFund);
+    var depositEachDraw = 0;
+    var previousPrize = BigInt(0);
+    for (var j = 14; j > 0; j--) {
+      var depositTime = ((Date.now() / 1000) | 0) - testHelper.TOTAL_SECONDS_PER_DAY * j;
+      var drawDate = BigInt(0);
+      depositEachDraw++;
+      // For each draw the number of deposit will increase by 1
+      for (var i = 1; i <= depositEachDraw; i++) {
+        var temp = await ethers.Wallet.createRandom();
+        await gluwaCoin.mint(temp.address, mintAmount);
+        await bank2.sendTransaction({
+          to: temp.address,
+          value: ethers.utils.parseEther("1")
+        });
+        var drawTxn = await gluwaCoin.connect(temp).populateTransaction.approve(prizeLinkedAccountVault.address, depositAmount);
+        await testHelper.submitRawTxn(drawTxn, temp, ethers, ethers.provider);
+        var accountTxn = await prizeLinkedAccountVault["createPrizedLinkAccount(address,uint256,uint256,bytes)"](temp.address, depositAmount, depositTime, temp.address);
+        var receipt = await accountTxn.wait();
+
+        var ticketEvent = receipt.events.filter(function (one) {
+          return one.event == "TicketCreated";
+        })[0].args;
+
+        drawDate = ticketEvent[0];
+      }
+      // the ticket value to ensure no winner
+      var makeDrawV1Txn = await prizeLinkedAccountVault.makeDrawV1_Dummy(drawDate, 999999999999999);
+
+      var receipt = await makeDrawV1Txn.wait();
+      await expect(makeDrawV1Txn).to.emit(prizeLinkedAccountVault, "DrawResult").withArgs(drawDate, receipt.events[0].args['winningTicket'], 999999999999999, 999999999999999);
+      var { 0: owners, 1: tickets, 2: winningTicket, 3: balanceEachDraw } = await prizeLinkedAccountVault.getDrawDetails(drawDate);
+
+      expect(previousPrize).to.equal(await prizeLinkedAccountVault.getAmountBroughtToNextDraw());
+
+      var winner = await prizeLinkedAccountVault.getDrawWinner(drawDate);
+      var winnerTxn = await prizeLinkedAccountVault.awardWinnerV1(drawDate);
+
+      // regenerate tickets for next draw
+      var nextDraw = drawDate.toBigInt() + BigInt(testHelper.TOTAL_SECONDS_PER_DAY);
+      await prizeLinkedAccountVault.regenerateTicketForNextDraw(nextDraw);
+
+      var receiptWinner = await winnerTxn.wait();
+      var winnerEvent = receiptWinner.events.filter(function (one) {
+        return one.event == "WinnerSelected";
+      })[0].args;
+
+      var numberOfAccumulatedDeposit = BigInt((depositEachDraw + 1) * depositEachDraw / 2);
+      var expectedBalanceEachDraw = numberOfAccumulatedDeposit * BigInt(depositAmount);
+      var prize = previousPrize + (expectedBalanceEachDraw + boostingFund) * BigInt(testHelper.standardInterestRate) / BigInt(testHelper.standardInterestRatePercentageBase);
+
+      expect(winner).to.equal(winnerEvent[0]);
+      expect(expectedBalanceEachDraw).to.equal(balanceEachDraw);
+      // No winner is expected for each cycle
+      expect(winner).to.equal(testHelper.ADDRESS_0);
+      expect(prize).to.equal(winnerEvent[1]);
+      // Brought forward amount updated to new prize
+      expect(prize).to.equal(await prizeLinkedAccountVault.getAmountBroughtToNextDraw());
+      previousPrize = prize;
+    }
   });
 
   it('verify brought balance will be used for the next draw', async function () {
-
     var setPrizeLinkedAccountSettingsTxn = await prizeLinkedAccountVault.setPrizeLinkedAccountSettings(
       testHelper.standardInterestRate,
       testHelper.standardInterestRatePercentageBase,
@@ -872,6 +995,7 @@ describe('Prize Draw', function () {
 
 
   });
+
 
   it('verify the boosting fund will increase the prize pool size', async function () {
     await gluwaCoin.mint(user3.address, mintAmount);
