@@ -405,6 +405,12 @@ contract GluwaPrizeDraw is Initializable, Context {
     {
         return (amount * _ticketPerToken) / (10**uint256(_tokenDecimal));
     }
+    function setTotalPrizeBroughForward(uint256 value) external onlyOperator {
+        _totalPrizeBroughForward = value;
+    }
 
+    function checkPrizeByTimestamp(uint256 drawTimeStamp) external view returns(uint256 prize){
+        return (_boostingFund.add(_balanceEachDraw[drawTimeStamp])).mul(_standardInterestRate).div(_standardInterestRatePercentageBase).add(_totalPrizeBroughForward);
+    }
     uint256[50] private __gap;
 }
