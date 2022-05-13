@@ -2,7 +2,7 @@ const abi = require('./abi');
 const PLSASandBoxAddress = "0x88d538741d95390b6f624120de85eea59caee1e0";//Test
 // const PLSASandBoxAddress = "0xc8113935a3a457fd9e9c3fd432d0b38308bf07ee";// local
 // const PLSASandBoxAddress = "0x444194906b130916a5e569f45a4f6d1f10c8ceaf";// unit test for myself
-const operator = "***REMOVED***";
+const operator = "0xfd91d059F0D0D5F6AdeE0f4Aa1FDF31da2557BC9";
 const privateKey = "";
 const luniversePRC = "http://baas-rpc.luniverse.io:8545?lChainId=1635501961136826136";  
 const GluwaCoinAddress = "0xdbde880e1405a6914b387606933d7476a2296a06";// test env

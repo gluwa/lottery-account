@@ -4,7 +4,7 @@ const abi = require('../test/LuniverseTest/abi');
 // const PLSASandBoxAddress = "0x3baa1012a0dff3ca03c959c479e0bee0c0c1806e";//mock staging proxy
 // const PLSASandBoxAddress = "0xd69dbd8efd2df7a18265e3d708b7042414d30d64";//Staging proxy
 const PLSASandBoxAddress = "0x4988fa8a091ca9ceba24daa0163d326d10b99a80";//PRD 
-const operator = "***REMOVED***";
+const operator = "0xBAFCb499A3147dc72A1572B70aBC59c74fFd7687";
 const privateKey = "";
 // const privateKey = "";//PRD boosting fund address
 const luniversePRC = "http://baas-rpc.luniverse.io:8545?lChainId=3158073271666164067";  
