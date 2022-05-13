@@ -28,6 +28,47 @@ describe('Prize Draw', function () {
     [prizeLinkedAccountVault, gluwaCoin, gluwaCoin2] = await testHelper.setupContractTesting(owner, user1, user2, mintAmount, depositAmount);
   });
 
+  it('verify prize balance grows properly across multiple days', async () => {
+    const createAccountReceipt = await testHelper.createPrizeLinkedAccountStandard(
+      prizeLinkedAccountVault, 
+      user1.address,
+      depositAmount,
+      user1.address).then(tx=>tx.wait());
+    
+    const drawDate = BigInt(createAccountReceipt.events
+      .filter(event=>event.event=="TicketCreated")[0].args[0]);      
+
+    //Make 1st draw, make sure no winner is drawn
+    await prizeLinkedAccountVault.makeDrawV1_Dummy(drawDate, 999999999999999);
+    
+    //Award winner, but there is no winner so prize should roll forward
+    await prizeLinkedAccountVault.awardWinnerV1(drawDate);
+
+    //expect initial prize to equal depositAmount * (interestRate/interestRateBase)
+    const initialPrize = await prizeLinkedAccountVault.getAmountBroughtToNextDraw();
+    const expectedInitialPrize = 
+      depositAmount * BigInt(testHelper.standardInterestRate)/BigInt(testHelper.standardInterestRatePercentageBase);    
+    expect(initialPrize).to.be.equal(expectedInitialPrize);
+    
+    //roll forward to next draw
+    const drawDate2 = drawDate + BigInt(testHelper.TOTAL_SECONDS_PER_DAY);
+
+    //regenerate tickets for next draw
+    await prizeLinkedAccountVault.regenerateTicketForNextDraw(drawDate2)
+
+    //make 2nd draw, make sure no winner is drawn
+    await prizeLinkedAccountVault.makeDrawV1_Dummy(drawDate2, 999999999999999)
+
+    //Award winner, but there is no winner so prize should roll forward
+    await prizeLinkedAccountVault.awardWinnerV1(drawDate2)
+
+    //expect second draw prize to equal 2 * depositAmount * (interestRate/interestRateBase)
+    const secondDrawPrize = await prizeLinkedAccountVault.getAmountBroughtToNextDraw();
+    const expectedSecondDrawPrize = 
+      BigInt(2) * depositAmount * BigInt(testHelper.standardInterestRate)/BigInt(testHelper.standardInterestRatePercentageBase);    
+    expect(secondDrawPrize).to.be.equal(expectedSecondDrawPrize);
+  });
+
   it('check ticket allocation and participants', async function () {
     var totalInDraw = 0;
     var drawDate = BigInt(0);
